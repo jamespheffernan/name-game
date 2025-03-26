@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Mobile Connection Test</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            line-height: 1.6;
+        }
+        .success {
+            color: green;
+            font-weight: bold;
+        }
+        .failure {
+            color: red;
+            font-weight: bold;
+        }
+        button {
+            padding: 10px;
+            margin: 10px 0;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        #results {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+            min-height: 100px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Mobile Connection Test</h1>
+    <p>This page tests if your mobile device can properly connect to the Name Game server.</p>
+    
+    <button id="testApi">Test API Connection</button>
+    
+    <div id="results">
+        <p>Connection status will appear here...</p>
+    </div>
+
+    <script>
+        document.getElementById('testApi').addEventListener('click', function() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<p>Testing connection...</p>';
+            
+            // Test basic API endpoint
+            fetch('/api/students/tags')
+                .then(response => {
+                    if (response.ok) {
+                        return response.json();
+                    }
+                    throw new Error('Network response was not ok');
+                })
+                .then(data => {
+                    results.innerHTML = `
+                        <p class="success">✓ Connection successful!</p>
+                        <p>Successfully connected to the Name Game server.</p>
+                        <p>API response received with ${Array.isArray(data) ? data.length : 'valid'} tags.</p>
+                        <p>You should now be able to use the Name Game app on your mobile device.</p>
+                        <p><a href="/">Go to the Name Game App</a></p>
+                    `;
+                })
+                .catch(error => {
+                    results.innerHTML = `
+                        <p class="failure">✗ Connection failed</p>
+                        <p>Could not connect to the Name Game server API.</p>
+                        <p>Error: ${error.message}</p>
+                        <p>Troubleshooting tips:</p>
+                        <ul>
+                            <li>Make sure your phone and computer are on the same WiFi network</li>
+                            <li>Check if there's a firewall blocking connections</li>
+                            <li>Try restarting the server</li>
+                            <li>Some networks separate devices - you may need to use a different approach</li>
+                        </ul>
+                    `;
+                });
+        });
+    </script>
+</body>
+</html>
