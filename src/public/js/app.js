@@ -1262,7 +1262,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Show loading indicator
-    const gameControls = document.querySelector('.game-controls');
+    const gameOptions = document.querySelector('.game-options');
     let loadingIndicator = document.getElementById('game-loading');
     
     if (!loadingIndicator) {
@@ -1270,7 +1270,20 @@ document.addEventListener('DOMContentLoaded', function() {
       loadingIndicator.id = 'game-loading';
       loadingIndicator.className = 'loading-indicator';
       loadingIndicator.innerHTML = '<div class="spinner"></div><p>Generating game...</p>';
-      gameControls.appendChild(loadingIndicator);
+      
+      // Append to the game options
+      if (gameOptions) {
+        gameOptions.appendChild(loadingIndicator);
+      } else {
+        // Fallback - append directly after the start game button
+        const nextSibling = startGameBtn.nextSibling;
+        if (nextSibling) {
+          startGameBtn.parentNode.insertBefore(loadingIndicator, nextSibling);
+        } else {
+          // If there's no next sibling, just append to the parent
+          startGameBtn.parentNode.appendChild(loadingIndicator);
+        }
+      }
     } else {
       loadingIndicator.style.display = 'flex';
     }
