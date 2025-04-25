@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        button { padding: 10px; margin: 10px 0; cursor: pointer; }
+        pre { background-color: #f5f5f5; padding: 10px; border-radius: 5px; overflow: auto; }
+    </style>
+</head>
+<body>
+    <h1>API Test Page</h1>
+    
+    <button id="testHealthcheck">Test /api/healthcheck</button>
+    <button id="testStudentTags">Test /api/students/tags</button>
+    <button id="testGameTags">Test /api/game/tags</button>
+    
+    <h2>Results:</h2>
+    <pre id="results">Click a button to test an endpoint</pre>
+
+    <script>
+        // Function to log results
+        function logResult(message) {
+            const results = document.getElementById('results');
+            results.textContent = message;
+        }
+
+        // Function to test an endpoint
+        async function testEndpoint(url) {
+            try {
+                logResult(`Fetching ${url}...`);
+                const fullUrl = window.location.origin + url;
+                console.log('Full URL:', fullUrl);
+                
+                const response = await fetch(fullUrl);
+                console.log('Response:', response);
+                
+                if (!response.ok) {
+                    logResult(`Error: ${response.status} ${response.statusText}\n\n${await response.text()}`);
+                    return;
+                }
+                
+                const data = await response.json();
+                logResult(`Success! ${response.status} ${response.statusText}\n\n${JSON.stringify(data, null, 2)}`);
+            } catch (error) {
+                logResult(`Error: ${error.message}`);
+                console.error('Fetch error:', error);
+            }
+        }
+
+        // Set up event listeners
+        document.getElementById('testHealthcheck').addEventListener('click', () => {
+            testEndpoint('/api/healthcheck');
+        });
+        
+        document.getElementById('testStudentTags').addEventListener('click', () => {
+            testEndpoint('/api/students/tags');
+        });
+        
+        document.getElementById('testGameTags').addEventListener('click', () => {
+            testEndpoint('/api/game/tags');
+        });
+    </script>
+</body>
+</html>

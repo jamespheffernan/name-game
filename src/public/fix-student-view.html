@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Directory</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <style>
+        /* Simple styles for this fix page */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            margin-bottom: 20px;
+        }
+        .student-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+        }
+        .student-card {
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            overflow: hidden;
+            transition: transform 0.2s;
+        }
+        .student-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .student-img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+        .student-info {
+            padding: 15px;
+        }
+        .student-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .student-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-top: 8px;
+        }
+        .tag {
+            background: #f0f0f0;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            font-size: 18px;
+        }
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #3182ce;
+            text-decoration: none;
+        }
+        .back-link:hover {
+            text-decoration: underline;
+        }
+        .actions {
+            margin-bottom: 20px;
+        }
+        button {
+            background-color: #4299e1;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover {
+            background-color: #3182ce;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <a href="/" class="back-link">← Back to Name Game</a>
+        <h1>Student Directory</h1>
+        <p>A clean view of all students in the database</p>
+    </div>
+
+    <div class="actions">
+        <button id="load-students">Load Students</button>
+        <button id="clear-students">Clear View</button>
+    </div>
+
+    <div id="student-count"></div>
+    <div id="loading" class="loading">Ready to load students...</div>
+    <div id="student-grid" class="student-grid"></div>
+
+    <script>
+        // DOM elements
+        const loadBtn = document.getElementById('load-students');
+        const clearBtn = document.getElementById('clear-students');
+        const studentGrid = document.getElementById('student-grid');
+        const loadingEl = document.getElementById('loading');
+        const countEl = document.getElementById('student-count');
+
+        // Event listeners
+        loadBtn.addEventListener('click', loadStudents);
+        clearBtn.addEventListener('click', clearStudents);
+
+        // Load students
+        async function loadStudents() {
+            try {
+                loadingEl.textContent = 'Loading students...';
+                
+                const response = await fetch('/api/students');
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch students: ${response.status} ${response.statusText}`);
+                }
+                
+                const students = await response.json();
+                
+                // Update count
+                countEl.textContent = `Found ${students.length} students`;
+                
+                // Clear previous content
+                studentGrid.innerHTML = '';
+                
+                // Display students
+                students.forEach(student => {
+                    const card = document.createElement('div');
+                    card.className = 'student-card';
+                    
+                    // Default image if none exists
+                    const imgSrc = student.imagePath || 'https://via.placeholder.com/200x200?text=No+Image';
+                    
+                    // Build tag HTML
+                    let tagsHtml = '';
+                    if (student.tags && Array.isArray(student.tags)) {
+                        tagsHtml = student.tags.map(tag => `<span class="tag">${tag}</span>`).join('');
+                    }
+                    
+                    // Create card content
+                    card.innerHTML = `
+                        <img class="student-img" src="${imgSrc}" alt="${student.fullName}">
+                        <div class="student-info">
+                            <div class="student-name">${student.fullName}</div>
+                            <div class="student-tags">${tagsHtml}</div>
+                        </div>
+                    `;
+                    
+                    studentGrid.appendChild(card);
+                });
+                
+                loadingEl.textContent = `Successfully loaded ${students.length} students`;
+            } catch (error) {
+                loadingEl.textContent = `Error: ${error.message}`;
+                console.error('Error loading students:', error);
+            }
+        }
+
+        // Clear students
+        function clearStudents() {
+            studentGrid.innerHTML = '';
+            countEl.textContent = '';
+            loadingEl.textContent = 'Student view cleared';
+        }
+    </script>
+</body>
+</html>

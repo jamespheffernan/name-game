@@ -15,7 +15,7 @@ const page3Mapping = [
   { name: "Natalya Doris", image: "page3_img3 new.png" },
   { name: "Catherine Dorman", image: "page3_img4 new.png" },
   { name: "Alisa Dudareva", image: "page3_img5 new.png" },
-  { name: "Oyyi Eﬀendi", image: "page3_img6 new.png" },
+  { name: "Oyyi Effendi", image: "page3_img6 new.png" },
   { name: "Sam Eisenberg", image: "page3_img7 new.png" },
   { name: "Rémy El Youssef", image: "page3_img8.png" },
   { name: "Floris Eland", image: "page3_img9 new.png" },

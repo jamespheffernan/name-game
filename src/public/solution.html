@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Display Solution</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 20px;
+        }
+        h1 {
+            margin-bottom: 20px;
+        }
+        .solution-options {
+            margin-bottom: 20px;
+        }
+        .solution-options button {
+            padding: 8px 16px;
+            margin-right: 10px;
+            cursor: pointer;
+        }
+        .card-grid {
+            display: grid !important;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+        .student-card {
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .student-img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+        .student-info {
+            padding: 15px;
+        }
+        .student-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .status {
+            padding: 10px;
+            background-color: #f0f0f0;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Name Game Fix Solutions</h1>
+    
+    <div class="status" id="status">Choose an option below to fix the student display issue.</div>
+    
+    <div class="solution-options">
+        <button id="option-1">Fix 1: Direct Student Display</button>
+        <button id="option-2">Fix 2: Use Alternative Styling</button>
+        <button id="option-3">Fix 3: Override CSS in Main App</button>
+        <a href="/student-debug.html"><button>Go to Debug Page</button></a>
+        <a href="/"><button>Back to App</button></a>
+    </div>
+    
+    <div id="student-list" class="card-grid"></div>
+    
+    <div id="solution-explanation"></div>
+    
+    <script>
+        const status = document.getElementById('status');
+        const studentList = document.getElementById('student-list');
+        const solutionExplanation = document.getElementById('solution-explanation');
+        
+        // Option 1: Direct display using DOM manipulation
+        document.getElementById('option-1').addEventListener('click', async () => {
+            try {
+                status.textContent = 'Loading students directly...';
+                
+                const response = await fetch('/api/students');
+                if (!response.ok) {
+                    throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+                }
+                
+                const students = await response.json();
+                status.textContent = `Loaded ${students.length} students - displaying first 10`;
+                
+                // Clear student list
+                studentList.innerHTML = '';
+                
+                // Display first 10 students
+                for (let i = 0; i < Math.min(10, students.length); i++) {
+                    const student = students[i];
+                    
+                    const card = document.createElement('div');
+                    card.className = 'student-card';
+                    
+                    const img = document.createElement('img');
+                    img.className = 'student-img';
+                    img.src = student.imagePath || '/uploads/student-images/placeholder.png';
+                    img.alt = student.fullName;
+                    
+                    const info = document.createElement('div');
+                    info.className = 'student-info';
+                    
+                    const name = document.createElement('div');
+                    name.className = 'student-name';
+                    name.textContent = student.fullName;
+                    
+                    info.appendChild(name);
+                    card.appendChild(img);
+                    card.appendChild(info);
+                    
+                    studentList.appendChild(card);
+                }
+                
+                solutionExplanation.innerHTML = `
+                    <h3>Fix 1 Explanation:</h3>
+                    <p>This solution bypasses any CSS issues by directly creating DOM elements rather than using innerHTML. 
+                    This can sometimes resolve issues where CSS selectors aren't matching properly or when there are issues 
+                    with the grid layout.</p>
+                    <p>To fix the main app, check if there are any CSS conflicts or if the student-list element's display 
+                    property is being overridden somewhere in the code.</p>
+                `;
+            } catch (error) {
+                status.textContent = `Error: ${error.message}`;
+                console.error('Error loading students:', error);
+            }
+        });
+        
+        // Option 2: Alternative styling
+        document.getElementById('option-2').addEventListener('click', async () => {
+            try {
+                status.textContent = 'Using alternative styling...';
+                
+                const response = await fetch('/api/students');
+                if (!response.ok) {
+                    throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+                }
+                
+                const students = await response.json();
+                status.textContent = `Loaded ${students.length} students - displaying first 10 with alternative styling`;
+                
+                // Clear student list
+                studentList.innerHTML = '';
+                
+                // Change student list styling
+                studentList.style.display = 'flex';
+                studentList.style.flexWrap = 'wrap';
+                studentList.style.gap = '20px';
+                
+                // Display first 10 students
+                for (let i = 0; i < Math.min(10, students.length); i++) {
+                    const student = students[i];
+                    
+                    const card = document.createElement('div');
+                    card.style.width = '200px';
+                    card.style.border = '1px solid #ccc';
+                    card.style.borderRadius = '8px';
+                    card.style.overflow = 'hidden';
+                    card.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.1)';
+                    
+                    const img = document.createElement('img');
+                    img.style.width = '100%';
+                    img.style.height = '200px';
+                    img.style.objectFit = 'cover';
+                    img.src = student.imagePath || '/uploads/student-images/placeholder.png';
+                    img.alt = student.fullName;
+                    
+                    const info = document.createElement('div');
+                    info.style.padding = '15px';
+                    
+                    const name = document.createElement('div');
+                    name.style.fontWeight = 'bold';
+                    name.style.marginBottom = '5px';
+                    name.textContent = student.fullName;
+                    
+                    info.appendChild(name);
+                    card.appendChild(img);
+                    card.appendChild(info);
+                    
+                    studentList.appendChild(card);
+                }
+                
+                solutionExplanation.innerHTML = `
+                    <h3>Fix 2 Explanation:</h3>
+                    <p>This solution uses direct inline styles instead of CSS classes. This bypasses any problems with 
+                    CSS class names or selectors that might be causing the display issues in the main app.</p>
+                    <p>To fix the main app, look for CSS conflicts between the 'card-grid' class and other styles, or check 
+                    if the grid layout is being overridden by other CSS rules.</p>
+                `;
+            } catch (error) {
+                status.textContent = `Error: ${error.message}`;
+                console.error('Error loading students:', error);
+            }
+        });
+        
+        // Option 3: CSS Override
+        document.getElementById('option-3').addEventListener('click', async () => {
+            try {
+                status.textContent = 'Creating CSS override solution...';
+                
+                const cssFixCode = `
+                <pre>
+/* Add this to your styles.css file */
+#student-list.card-grid {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)) !important;
+    gap: 1.5rem !important;
+    margin-top: 2rem !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+/* Or add this inline in your HTML */
+&lt;div id="student-list" class="card-grid" 
+    style="display: grid !important; 
+           grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)) !important; 
+           gap: 1.5rem !important; 
+           margin-top: 2rem !important;
+           opacity: 1 !important;
+           visibility: visible !important;"&gt;&lt;/div&gt;
+</pre>`;
+                
+                solutionExplanation.innerHTML = `
+                    <h3>Fix 3 Explanation:</h3>
+                    <p>This solution provides CSS code to override any conflicting styles that might be causing the display issues.</p>
+                    <p>The CSS uses the !important flag to ensure these styles take precedence over any other styles that might be affecting the student grid.</p>
+                    <p>You can add these styles to your styles.css file or directly inline in your HTML as shown.</p>
+                    <h4>CSS to Add:</h4>
+                    ${cssFixCode}
+                `;
+                
+                status.textContent = 'CSS override solution generated';
+            } catch (error) {
+                status.textContent = `Error: ${error.message}`;
+                console.error('Error:', error);
+            }
+        });
+    </script>
+</body>
+</html>

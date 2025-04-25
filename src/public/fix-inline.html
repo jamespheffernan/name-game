@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Name Game Quick Fix</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+        h1 {
+            margin-bottom: 20px;
+        }
+        .code-box {
+            background-color: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            overflow-x: auto;
+            margin: 20px 0;
+        }
+        button {
+            padding: 8px 16px;
+            background-color: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 10px 0;
+        }
+        button:hover {
+            background-color: #2563eb;
+        }
+        .instructions {
+            background-color: #f8fafc;
+            border-left: 4px solid #3b82f6;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .success {
+            color: #047857;
+            font-weight: bold;
+        }
+        .error {
+            color: #dc2626;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>Name Game Quick Fix - Student Display Issue</h1>
+    
+    <div class="instructions">
+        <p>This page provides a quick fix for the issue where students are loaded but not displayed in the Student Management section.</p>
+        <ol>
+            <li>Go to the Name Game app at <a href="/" target="_blank">http://localhost:3000/</a></li>
+            <li>Click the "Manage Students" button</li>
+            <li>Copy the code below</li>
+            <li>Press F12 to open the browser developer tools</li>
+            <li>Paste the code into the Console tab and press Enter</li>
+        </ol>
+    </div>
+    
+    <h2>Copy this code:</h2>
+    <div class="code-box">
+        <pre><code>// Quick fix for student display issue
+(function fixStudentDisplay() {
+  // Get the student list element
+  const studentList = document.getElementById('student-list');
+  if (!studentList) {
+    console.error('Student list element not found');
+    return;
+  }
+  
+  console.log('Original display style:', getComputedStyle(studentList).display);
+  
+  // 1. Fix loading indicator
+  const loadingIndicator = document.querySelector('.loading-indicator');
+  if (loadingIndicator) {
+    loadingIndicator.style.display = 'none';
+    console.log('Removed loading indicator');
+  }
+  
+  // 2. Apply necessary styles to student list
+  Object.assign(studentList.style, {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+    gap: '1.5rem',
+    opacity: '1',
+    visibility: 'visible',
+    position: 'static'
+  });
+  
+  // 3. Verify if students are loaded but not visible
+  if (studentList.children.length === 0) {
+    // No students were added - load directly from API
+    fetch('/api/students')
+      .then(response => response.json())
+      .then(students => {
+        console.log(`Found ${students.length} students, displaying first 10`);
+        
+        // Display first 10 students
+        students.slice(0, 10).forEach(student => {
+          const card = document.createElement('div');
+          card.className = 'student-card';
+          card.innerHTML = `
+            <img class="student-img" src="${student.imagePath || 'https://via.placeholder.com/150'}" alt="${student.fullName}">
+            <div class="student-info">
+              <div class="student-name">${student.fullName}</div>
+              <div class="student-tags">
+                ${student.tags && Array.isArray(student.tags) ? 
+                  student.tags.map(tag => `<span class="tag">${tag}</span>`).join('') : ''}
+              </div>
+            </div>
+          `;
+          studentList.appendChild(card);
+        });
+        
+        console.log('Manually added students to display');
+      })
+      .catch(error => console.error('Error fetching students:', error));
+  } else {
+    console.log(`Student list already contains ${studentList.children.length} children`);
+  }
+  
+  console.log('Fix applied - new display style:', getComputedStyle(studentList).display);
+})();</code></pre>
+    </div>
+    
+    <button onclick="copyCode()">Copy to Clipboard</button>
+    <div id="copy-status"></div>
+    
+    <h2>Alternative: View Students Directly</h2>
+    <p>If the fix doesn't work, you can view all students directly in a standalone interface:</p>
+    <a href="/fix-student-view.html"><button>Open Student Directory</button></a>
+    
+    <script>
+        function copyCode() {
+            const code = document.querySelector('.code-box code').innerText;
+            navigator.clipboard.writeText(code)
+                .then(() => {
+                    document.getElementById('copy-status').innerHTML = '<span class="success">Code copied to clipboard!</span>';
+                    setTimeout(() => {
+                        document.getElementById('copy-status').innerHTML = '';
+                    }, 3000);
+                })
+                .catch(err => {
+                    document.getElementById('copy-status').innerHTML = '<span class="error">Failed to copy code: ' + err + '</span>';
+                });
+        }
+    </script>
+</body>
+</html>

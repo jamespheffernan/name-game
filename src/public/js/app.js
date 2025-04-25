@@ -56,6 +56,9 @@ document.addEventListener('DOMContentLoaded', function() {
   const resultDetails = document.getElementById('result-details');
   const playAgainBtn = document.getElementById('play-again-btn');
   
+  // Advanced filters elements
+  // Note: The filter selects are already defined in the student management section
+  
   // Performance stats elements
   const viewPerformanceBtn = document.getElementById('view-performance-btn');
   const performanceStats = document.getElementById('performance-stats');
@@ -105,6 +108,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // Tab navigation
   tabBtns.forEach(btn => {
     btn.addEventListener('click', () => {
+      console.log('Tab clicked:', btn.dataset.tab);
       // Remove active class from all buttons
       tabBtns.forEach(b => b.classList.remove('active'));
       // Add active class to clicked button
@@ -115,12 +119,20 @@ document.addEventListener('DOMContentLoaded', function() {
       
       // Show the content for the clicked tab
       const tabId = btn.dataset.tab;
-      document.getElementById(tabId).classList.remove('hidden');
+      console.log('Showing tab content:', tabId);
+      const tabContent = document.getElementById(tabId);
+      if (tabContent) {
+        tabContent.classList.remove('hidden');
+      } else {
+        console.error('Tab content not found:', tabId);
+      }
       
       // Load appropriate data
       if (tabId === 'students-tab') {
+        console.log('Loading students data...');
         loadStudents();
       } else if (tabId === 'tags-tab') {
+        console.log('Loading tags data...');
         loadTags();
       }
     });
@@ -130,20 +142,72 @@ document.addEventListener('DOMContentLoaded', function() {
   async function loadTags() {
     try {
       console.log('Fetching tags from server...');
-      const response = await fetch('/api/students/tags');
+      // Use the full URL with hostname and port
+      const serverUrl = window.location.origin; // This will use whatever origin the browser is currently on
       
-      // Log detailed response info for debugging
-      console.log(`Tags response status: ${response.status}`);
-      console.log(`Tags response ok: ${response.ok}`);
+      // Try main endpoint first
+      console.log('Fetching student tags from primary endpoint:', `${serverUrl}/api/students/tags`);
+      let response;
+      let usedBackup = false;
+      
+      try {
+        response = await fetch(`${serverUrl}/api/students/tags`);
+        
+        // Log detailed response info for debugging
+        console.log(`Tags response status: ${response.status}`);
+        console.log(`Tags response ok: ${response.ok}`);
+        
+        // If main endpoint returns 404, try backup
+        if (response.status === 404) {
+          console.log('Primary tags endpoint not found (404), trying backup endpoint...');
+          usedBackup = 'backup';
+          response = await fetch(`${serverUrl}/api/students/tags-backup`);
+          console.log(`Backup tags response status: ${response.status}`);
+          console.log(`Backup tags response ok: ${response.ok}`);
+          
+          // If backup endpoint returns 404, try direct endpoint
+          if (response.status === 404) {
+            console.log('Backup tags endpoint not found (404), trying direct endpoint...');
+            usedBackup = 'direct';
+            response = await fetch(`${serverUrl}/api/students/tags-direct`);
+            console.log(`Direct tags response status: ${response.status}`);
+            console.log(`Direct tags response ok: ${response.ok}`);
+          }
+        }
+      } catch (fetchError) {
+        console.error('Error fetching from primary endpoint:', fetchError);
+        console.log('Trying backup endpoint after fetch error...');
+        
+        try {
+          usedBackup = 'backup';
+          response = await fetch(`${serverUrl}/api/students/tags-backup`);
+          console.log(`Backup tags response status: ${response.status}`);
+          console.log(`Backup tags response ok: ${response.ok}`);
+        } catch (backupError) {
+          console.error('Error fetching from backup endpoint:', backupError);
+          console.log('Trying direct endpoint after backup fetch error...');
+          usedBackup = 'direct';
+          response = await fetch(`${serverUrl}/api/students/tags-direct`);
+          console.log(`Direct tags response status: ${response.status}`);
+          console.log(`Direct tags response ok: ${response.ok}`);
+        }
+      }
       
       if (!response.ok) {
         const errorText = await response.text();
-        console.error(`Error response from tags API: ${errorText}`);
+        let endpointName = 'primary';
+        if (usedBackup === 'backup') endpointName = 'backup';
+        if (usedBackup === 'direct') endpointName = 'direct';
+        console.error(`Error response from ${endpointName} tags API: ${errorText}`);
         throw new Error(`Failed to fetch tags: ${response.status} ${response.statusText}`);
       }
       
       const tags = await response.json();
-      console.log('Successfully loaded tags:', Object.keys(tags).length, 'tags found');
+      let endpointName = 'primary';
+      if (usedBackup === 'backup') endpointName = 'backup';
+      if (usedBackup === 'direct') endpointName = 'direct';
+      console.log(`Successfully loaded tags from ${endpointName} endpoint:`, 
+                 Object.keys(tags).length, 'tags found');
       
       // Handle empty or invalid tags object
       if (!tags || typeof tags !== 'object') {
@@ -159,12 +223,12 @@ document.addEventListener('DOMContentLoaded', function() {
       // Also populate tag dropdowns, including batch tag select
       populateTagDropdowns(tags);
     } catch (error) {
-      console.error('Error loading tags:', error);
+      console.error('Error loading tags from all endpoints:', error);
       // Use empty tags as fallback to prevent UI from breaking completely
       displayTags({});
       populateTagDropdowns({});
       // Show error to user with more context
-      alert(`Failed to load tags: ${error.message}`);
+      alert(`Failed to load tags from all endpoints (primary, backup, and direct): ${error.message}`);
     }
   }
   
@@ -361,23 +425,126 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
   
-  // Filter students by tag
-  filterTagSelect.addEventListener('change', (e) => {
-    const selectedTag = e.target.value;
-    filterStudentsByTag(selectedTag);
-  });
+  // Advanced filters
+  const filterNationalitySelect = document.getElementById('filter-nationality');
+  const filterLanguageSelect = document.getElementById('filter-language');
+  const filterGenderSelect = document.getElementById('filter-gender');
   
+  // Event listeners for filter changes
+  filterTagSelect.addEventListener('change', applyFilters);
+  
+  if (filterNationalitySelect) filterNationalitySelect.addEventListener('change', applyFilters);
+  if (filterLanguageSelect) filterLanguageSelect.addEventListener('change', applyFilters);
+  if (filterGenderSelect) filterGenderSelect.addEventListener('change', applyFilters);
+  
+  // Toggle advanced filters visibility in student management
+  const studentManagementToggleBtn = document.querySelector('#student-management #toggle-advanced-filters');
+  const studentManagementFilterContainer = document.querySelector('#student-management #advanced-filters');
+  
+  if (studentManagementToggleBtn && studentManagementFilterContainer) {
+    studentManagementToggleBtn.addEventListener('click', () => {
+      studentManagementFilterContainer.classList.toggle('visible');
+      studentManagementToggleBtn.textContent = studentManagementFilterContainer.classList.contains('visible') 
+        ? 'Hide Advanced Filters' 
+        : 'Advanced Filters';
+    });
+  }
+  
+  // Load nationality and language options when students are loaded
+  async function populateFilterOptions() {
+    try {
+      // Get all students to extract nationalities and languages
+      const response = await fetch('/api/students');
+      if (!response.ok) throw new Error('Failed to fetch students');
+      
+      const students = await response.json();
+      
+      // Extract unique nationalities and languages from tags
+      const nationalities = new Set();
+      const languages = new Set();
+      
+      students.forEach(student => {
+        if (student.tags && Array.isArray(student.tags)) {
+          student.tags.forEach(tag => {
+            if (tag.startsWith('nationality:')) {
+              const nationality = tag.replace('nationality:', '');
+              nationalities.add(nationality);
+            } else if (tag.startsWith('language:')) {
+              const language = tag.replace('language:', '');
+              languages.add(language);
+            }
+          });
+        }
+      });
+      
+      // Populate nationality dropdown
+      if (filterNationalitySelect) {
+        // Clear existing options except the first one
+        while (filterNationalitySelect.options.length > 1) {
+          filterNationalitySelect.remove(1);
+        }
+        
+        // Add nationality options
+        Array.from(nationalities).sort().forEach(nationality => {
+          const option = document.createElement('option');
+          option.value = `nationality:${nationality}`;
+          option.textContent = nationality.charAt(0).toUpperCase() + nationality.slice(1);
+          filterNationalitySelect.appendChild(option);
+        });
+      }
+      
+      // Populate language dropdown
+      if (filterLanguageSelect) {
+        // Clear existing options except the first one
+        while (filterLanguageSelect.options.length > 1) {
+          filterLanguageSelect.remove(1);
+        }
+        
+        // Add language options
+        Array.from(languages).sort().forEach(language => {
+          const option = document.createElement('option');
+          option.value = `language:${language}`;
+          option.textContent = language.charAt(0).toUpperCase() + language.slice(1);
+          filterLanguageSelect.appendChild(option);
+        });
+      }
+      
+    } catch (error) {
+      console.error('Error loading filter options:', error);
+    }
+  }
+  
+  // Apply all filters
+  function applyFilters() {
+    const tagFilter = filterTagSelect.value;
+    const nationalityFilter = filterNationalitySelect?.value || '';
+    const languageFilter = filterLanguageSelect?.value || '';
+    const genderFilter = filterGenderSelect?.value || '';
+    
+    filterStudentsByMultipleCriteria(tagFilter, nationalityFilter, languageFilter, genderFilter);
+  }
+  
+  // For backward compatibility
   async function filterStudentsByTag(tagName) {
+    return filterStudentsByMultipleCriteria(tagName, '', '', '');
+  }
+  
+  // Filter students by multiple criteria
+  async function filterStudentsByMultipleCriteria(tagName, nationalityTag, languageTag, genderTag) {
     try {
       // Show loading indicator
       displayLoadingIndicator();
       
-      let students;
+      // Start with all students
+      let students = [];
       
+      // First, get either filtered by tag or all students
       if (tagName) {
         // Fetch students with the selected tag
         console.log(`Fetching students with tag: ${tagName}`);
-        const response = await fetch(`/api/students/tags/${tagName}/students`);
+        
+        // Use simpler API path for debugging - get all students first
+        const response = await fetch('/api/students');
         
         // Log detailed response info for debugging
         console.log(`Response status: ${response.status}`);
@@ -386,10 +553,16 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!response.ok) {
           const errorText = await response.text();
           console.error(`Error response: ${errorText}`);
-          throw new Error(`Failed to fetch students by tag: ${response.statusText}`);
+          throw new Error(`Failed to fetch students: ${response.statusText}`);
         }
         
-        students = await response.json();
+        const allStudents = await response.json();
+        console.log(`Fetched ${allStudents.length} total students`);
+        
+        // Filter on client-side for the specific tag instead of using the tag endpoint
+        students = allStudents.filter(student => 
+          student.tags && Array.isArray(student.tags) && student.tags.includes(tagName)
+        );
         console.log(`Found ${students.length} students with tag ${tagName}`);
       } else {
         // Fetch all students
@@ -408,6 +581,37 @@ document.addEventListener('DOMContentLoaded', function() {
         
         students = await response.json();
         console.log(`Found ${students.length} total students`);
+      }
+      
+      // Then apply additional filters on the client side
+      if (nationalityTag || languageTag || genderTag) {
+        console.log(`Applying additional filters: nationality=${nationalityTag}, language=${languageTag}, gender=${genderTag}`);
+        
+        students = students.filter(student => {
+          // Skip students without tags
+          if (!student.tags || !Array.isArray(student.tags)) {
+            return false;
+          }
+          
+          // Apply nationality filter if provided
+          if (nationalityTag && !student.tags.includes(nationalityTag)) {
+            return false;
+          }
+          
+          // Apply language filter if provided
+          if (languageTag && !student.tags.includes(languageTag)) {
+            return false;
+          }
+          
+          // Apply gender filter if provided
+          if (genderTag && !student.tags.includes(genderTag)) {
+            return false;
+          }
+          
+          return true;
+        });
+        
+        console.log(`After applying filters, found ${students.length} matching students`);
       }
       
       // Validate students array
@@ -491,14 +695,41 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // Load students from the database
   async function loadStudents() {
+    console.log('loadStudents() function called');
     try {
-      // We don't need to display a loading indicator here
-      // since filterStudentsByTag will handle that
+      // Display loading indicator to show progress
+      displayLoadingIndicator();
+      
+      // Get filter values
+      console.log('Reading filter values...');
       const selectedTag = filterTagSelect.value;
-      await filterStudentsByTag(selectedTag);
-      await loadTags(); // Also load tags to keep everything in sync
+      const nationalityFilter = filterNationalitySelect?.value || '';
+      const languageFilter = filterLanguageSelect?.value || '';
+      const genderFilter = filterGenderSelect?.value || '';
+      
+      console.log('Filter values:', { 
+        tag: selectedTag, 
+        nationality: nationalityFilter, 
+        language: languageFilter, 
+        gender: genderFilter 
+      });
+      
+      // Populate the filter dropdowns
+      console.log('Populating filter options...');
+      await populateFilterOptions();
+      
+      // Apply any active filters
+      console.log('Applying filters to student data...');
+      await filterStudentsByMultipleCriteria(selectedTag, nationalityFilter, languageFilter, genderFilter);
+      
+      // Also load tags to keep everything in sync
+      console.log('Loading tags to keep in sync...');
+      await loadTags();
+      
+      console.log('loadStudents completed successfully');
     } catch (error) {
       console.error('Error loading students:', error);
+      console.error('Error stack:', error.stack);
       alert('Failed to load students. Please try again.');
       // Make sure loading indicator is hidden in case of error
       hideLoadingIndicator();
@@ -507,10 +738,31 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // Display students in the list
   function displayStudents(students) {
+    console.log(`Displaying ${students ? students.length : 0} students`);
+    
+    // Make sure studentList element exists
+    if (!studentList) {
+      console.error('Student list element not found in DOM');
+      return;
+    }
+    
+    console.log('Student list element:', studentList);
+    console.log('Student list visibility:', getComputedStyle(studentList).display);
+    console.log('Student list parent visibility:', studentList.parentElement ? 
+      getComputedStyle(studentList.parentElement).display : 'No parent');
+    
+    // Debug output for troubleshooting
+    if (students && students.length > 0) {
+      console.log('Sample student data:', students[0]);
+    } else {
+      console.warn('No student data to display');
+    }
+    
     studentList.innerHTML = '';
     
-    if (students.length === 0) {
-      studentList.innerHTML = '<p>No students added yet.</p>';
+    if (!students || students.length === 0) {
+      console.log('No students to display, showing message');
+      studentList.innerHTML = '<p>No students found. Please check database connection.</p>';
       return;
     }
     
@@ -1182,7 +1434,13 @@ document.addEventListener('DOMContentLoaded', function() {
   // Function to load game tags
   async function loadGameTags() {
     // Show loading indicator for tags
-    const tagSelectWrapper = document.getElementById('tag-select').parentNode;
+    const tagSelect = document.getElementById('tag-select');
+    if (!tagSelect) {
+      console.error('Could not find tag-select element');
+      return;
+    }
+    
+    const tagSelectWrapper = tagSelect.parentNode;
     let tagLoadingIndicator = document.getElementById('tags-loading');
     
     if (!tagLoadingIndicator) {
@@ -1197,8 +1455,22 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     try {
-      const response = await fetch('/api/game/tags');
-      if (!response.ok) throw new Error('Failed to fetch game tags');
+      // Use the full URL with hostname and port
+      const serverUrl = window.location.origin; // This will use whatever origin the browser is currently on
+      console.log('Fetching game tags from:', `${serverUrl}/api/game/tags`);
+      
+      // Try the main endpoint first
+      let response;
+      try {
+        response = await fetch(`${serverUrl}/api/game/tags`);
+        if (!response.ok) throw new Error(`Main endpoint failed: ${response.status}`);
+      } catch (mainError) {
+        console.warn('Main game tags endpoint failed, trying backup:', mainError);
+        // If the main endpoint fails, try the backup
+        response = await fetch(`${serverUrl}/api/game/tags-backup`);
+        if (!response.ok) throw new Error(`Backup endpoint also failed: ${response.status} ${response.statusText}`);
+      }
+      
       
       const tags = await response.json();
       
@@ -1248,6 +1520,8 @@ document.addEventListener('DOMContentLoaded', function() {
     loadGameTags();
   });
   
+  // Advanced filters feature removed while preserving nationality and language data in students.json
+  
   // Start a new game
   startGameBtn.addEventListener('click', async () => {
     const mode = gameModeSelect.value;
@@ -1255,6 +1529,17 @@ document.addEventListener('DOMContentLoaded', function() {
     const focusDifficult = focusDifficultCheckbox.checked;
     const onlyUntried = onlyUntriedCheckbox.checked;
     const tagName = tagSelect.value || null;
+    // Get the exclude tag checkbox and ensure its value is a boolean
+    const excludeTagCheckbox = document.getElementById('exclude-tag');
+    const excludeTag = excludeTagCheckbox ? excludeTagCheckbox.checked : false;
+    // Get the similar wrong answers checkbox
+    const useSimilarWrongAnswersCheckbox = document.getElementById('use-similar-wrong-answers');
+    const useSimilarWrongAnswers = useSimilarWrongAnswersCheckbox ? useSimilarWrongAnswersCheckbox.checked : true;
+    
+      // Advanced filters removed
+    const nationalityFilter = '';
+    const languageFilter = '';
+    const genderFilter = '';
     
     if (isNaN(questionCount) || questionCount < 5) {
       alert('Please enter a valid number of questions (minimum 5)');
@@ -1291,17 +1576,48 @@ document.addEventListener('DOMContentLoaded', function() {
     // Disable start button while loading
     startGameBtn.disabled = true;
     
+    // Log the game options for debugging
+    console.log('Starting game with options:', {
+      mode,
+      questionCount,
+      focusDifficult,
+      onlyUntried,
+      tagName,
+      excludeTag,
+      useSimilarWrongAnswers
+    });
+    
     try {
+      // Check if advanced filters are active
+      const hasAdvancedFilters = nationalityFilter || languageFilter || genderFilter;
+      if (hasAdvancedFilters) {
+        console.log('Using advanced filters:', { nationalityFilter, languageFilter, genderFilter });
+      }
+      
       const response = await fetch('/api/game/generate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ mode, questionCount, focusDifficult, onlyUntried, tagName })
+        body: JSON.stringify({ 
+          mode, 
+          questionCount, 
+          focusDifficult, 
+          onlyUntried, 
+          tagName, 
+          excludeTag,
+          useSimilarWrongAnswers,
+          advancedFilters: {
+            nationality: nationalityFilter,
+            language: languageFilter,
+            gender: genderFilter
+          }
+        })
       });
       
       if (!response.ok) {
         const error = await response.json();
+        console.error('Game generation failed:', error);
         throw new Error(error.message || error.error || 'Failed to start game');
       }
       
@@ -1326,7 +1642,14 @@ document.addEventListener('DOMContentLoaded', function() {
       const activeTagName = document.querySelector('.active-tag-name');
       
       if (currentGame.tagName) {
-        activeTagName.textContent = currentGame.tagName;
+        // Show whether we're including or excluding the tag
+        if (currentGame.excludeTag) {
+          activeTagName.textContent = `NOT ${currentGame.tagName} (excluding)`;
+          activeBanner.style.backgroundColor = '#f56565'; // Red background for exclusion
+        } else {
+          activeTagName.textContent = currentGame.tagName;
+          activeBanner.style.backgroundColor = ''; // Reset to default
+        }
         activeBanner.classList.remove('hidden');
       } else {
         activeBanner.classList.add('hidden');
@@ -1344,7 +1667,12 @@ document.addEventListener('DOMContentLoaded', function() {
       // Re-enable start button
       startGameBtn.disabled = false;
       
-      alert(`Error: ${error.message}`);
+      // Show a more detailed error message
+      if (mode === 'connectionTrivia') {
+        alert(`Connection Trivia Error: ${error.message}\n\nMake sure the server is running and has been restarted after implementing the connectionTrivia mode.`);
+      } else {
+        alert(`Error: ${error.message}`);
+      }
     }
   });
   
@@ -1368,15 +1696,20 @@ document.addEventListener('DOMContentLoaded', function() {
     // Reset options display to visible
     optionsDisplay.style.display = '';
     
-    // Check for hard mode and apply special class to the options display for grid layout
+    // Check for special modes and apply appropriate classes
     if (question.type === 'hard') {
       optionsDisplay.className = 'hard-mode-grid';
+    } else if (question.type === 'connectionTrivia') {
+      optionsDisplay.className = 'connection-options';
     } else {
       optionsDisplay.className = '';
     }
     
     // Display the question prompt based on game type
-    if (question.type === 'shortAnswer') {
+    if (question.type === 'connectionTrivia') {
+      // Connection Trivia mode: Show two students and ask about their connection
+      displayConnectionTrivia(question, index);
+    } else if (question.type === 'shortAnswer') {
       // Short answer mode: Show image, ask for name with text input
       const studentImage = question.studentImage;
       
@@ -1457,7 +1790,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
       });
     } else if (question.type === 'standard' || question.type === 'hard') {
-      // Standard or Hard game mode: Show image, ask for name
+      // Multiple Choice or Hard game mode: Show image, ask for name
       const studentImage = question.studentImage || question.options.find(opt => opt.id === question.studentId)?.imagePath;
       
       // Show the continue button for standard/hard modes
@@ -1507,10 +1840,39 @@ document.addEventListener('DOMContentLoaded', function() {
       
       const formattedName = formatNameWithPreferred(studentObj);
       
+      // Add reverse-mode class for sticky positioning
+      questionDisplay.className = 'reverse-mode';
+      
+      // Create and insert mobile name banner for reverse mode
+      const isMobile = window.innerWidth <= 576;
+      if (isMobile) {
+        // Clear any existing mobile banners first
+        const existingBanner = document.getElementById('mobile-name-banner');
+        if (existingBanner) existingBanner.remove();
+        
+        // Create mobile-specific fixed header
+        const mobileBanner = document.createElement('div');
+        mobileBanner.id = 'mobile-name-banner';
+        mobileBanner.innerHTML = `
+          <h3>Question ${index + 1} of ${currentGame.questions.length}</h3>
+          <p class="name-banner">Which photo shows <strong>${formattedName}</strong>?</p>
+        `;
+        
+        // Insert at the beginning of body to ensure it's on top
+        document.body.insertBefore(mobileBanner, document.body.firstChild);
+      }
+      
+      // Still keep the regular question display for non-mobile
       questionDisplay.innerHTML = `
         <h3>Question ${index + 1} of ${currentGame.questions.length}</h3>
-        <p>Which photo shows ${formattedName}?</p>
+        <p class="name-banner">Which photo shows <strong>${formattedName}</strong>?</p>
       `;
+      
+      // Set special class for reverse mode options display to improve mobile layout
+      optionsDisplay.className = 'reverse-mode';
+      
+      // Hide continue button for reverse mode - we'll auto-advance
+      continueBtn.style.display = 'none';
       
       // Create option cards with images
       question.options.forEach((option, idx) => {
@@ -1524,7 +1886,8 @@ document.addEventListener('DOMContentLoaded', function() {
         
         optionCard.innerHTML = `
           ${numberHtml}
-          <img src="${option.imagePath}" alt="Student">
+          <img src="${option.imagePath}" alt="Student" loading="lazy">
+          <span class="tap-to-select">Tap to select</span>
         `;
         
         optionCard.addEventListener('click', () => selectOption(optionCard, question));
@@ -1593,12 +1956,24 @@ document.addEventListener('DOMContentLoaded', function() {
       dontKnowBtn.style.backgroundColor = '#4a5568';
     }
     
-    // Check if we're in short answer mode and auto-advance if so
-    if (question.type === 'shortAnswer') {
+    // Auto-advance to next question for shortAnswer or reverse mode
+    if (question.type === 'shortAnswer' || question.type === 'reverse') {
       // Add a slight delay before auto-advancing to allow the user to see their selection
       setTimeout(() => {
-        if (!continueBtn.disabled) {
-          continueBtn.click();
+        // Remove mobile banner if it exists
+        const mobileBanner = document.getElementById('mobile-name-banner');
+        if (mobileBanner) {
+          mobileBanner.remove();
+        }
+        
+        // If this is the last question, finish the game
+        const isLastQuestion = currentQuestionIndex === currentGame.questions.length - 1;
+        if (isLastQuestion) {
+          finishGame();
+        } else {
+          // Move to the next question
+          currentQuestionIndex++;
+          displayQuestion(currentQuestionIndex);
         }
       }, 500);
     }
@@ -1636,28 +2011,91 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Enable the continue button
     continueBtn.disabled = false;
+    
+    // For reverse mode, auto-advance to next question after a brief delay
+    if (question.type === 'reverse') {
+      // Add visual feedback before advancing
+      setTimeout(() => {
+        // Remove mobile banner if it exists
+        const mobileBanner = document.getElementById('mobile-name-banner');
+        if (mobileBanner) {
+          mobileBanner.remove();
+        }
+        
+        // If this is the last question, finish the game
+        const isLastQuestion = currentQuestionIndex === currentGame.questions.length - 1;
+        if (isLastQuestion) {
+          finishGame();
+        } else {
+          // Move to the next question
+          currentQuestionIndex++;
+          displayQuestion(currentQuestionIndex);
+        }
+      }, 500); // Half-second delay for visual feedback
+    }
   }
   
   // Finish the game and show results
   async function finishGame() {
+    // Remove any mobile name banner if it exists
+    const mobileBanner = document.getElementById('mobile-name-banner');
+    if (mobileBanner) {
+      mobileBanner.remove();
+    }
+    
     try {
+      // Debug what we're sending
+      console.log('=== SUBMITTING GAME RESULTS ===');
+      console.log('Current game questions:', currentGame.questions.length);
+      console.log('User answers:', userAnswers.length);
+      console.log('Sample wrong answers:', userAnswers
+        .filter(a => a.dontKnow !== true && a.correct !== true)
+        .slice(0, 2).map(a => JSON.stringify(a)));
+      
+      // Create a structured payload to easily debug
+      const payload = {
+        questions: currentGame.questions,
+        answers: userAnswers
+      };
+      
+      console.log('Sending payload to /api/game/score');
+      
       const response = await fetch('/api/game/score', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          questions: currentGame.questions,
-          answers: userAnswers
-        })
+        body: JSON.stringify(payload)
       });
+      
+      console.log('Response status:', response.status);
       
       if (!response.ok) {
         const error = await response.json();
+        console.error('Error response from server:', error);
         throw new Error(error.error || 'Failed to score game');
       }
       
+      console.log('Response ok, getting JSON...');
       const scoreResult = await response.json();
+      console.log('Score result received:', 
+        scoreResult.score + '/' + scoreResult.totalQuestions,
+        scoreResult.percentage + '%');
+      
+      // Check if performance data is returned
+      if (scoreResult.performanceData) {
+        console.log('Performance data received for', 
+          Object.keys(scoreResult.performanceData).length, 'students');
+          
+        // Check for wrong answers
+        Object.entries(scoreResult.performanceData).forEach(([studentId, data]) => {
+          if (data.wrongAnswers && data.wrongAnswers.length > 0) {
+            console.log(`Student ${studentId} has ${data.wrongAnswers.length} wrong answers`);
+          }
+        });
+      }
+      
+      // Display the results
       displayGameResults(scoreResult);
     } catch (error) {
       console.error('Error scoring game:', error);
@@ -1678,6 +2116,52 @@ document.addEventListener('DOMContentLoaded', function() {
       displayQuestion(currentQuestionIndex);
     }
   });
+  
+  // Display connection trivia question
+  function displayConnectionTrivia(question, index) {
+    // Show the continue button for connection trivia
+    continueBtn.style.display = '';
+    
+    // Create the header and question display
+    questionDisplay.innerHTML = `
+      <h3>Question ${index + 1} of ${currentGame.questions.length}</h3>
+      <p class="connection-question">${question.question}</p>
+      <div class="student-connection-pair">
+        <div class="connection-student">
+          <img src="${question.student1.imagePath}" alt="${question.student1.name}">
+          <p>${question.student1.name}</p>
+        </div>
+        <div class="connection-and">
+          <div class="connection-line"></div>
+          <div class="connection-circle">?</div>
+          <div class="connection-line"></div>
+        </div>
+        <div class="connection-student">
+          <img src="${question.student2.imagePath}" alt="${question.student2.name}">
+          <p>${question.student2.name}</p>
+        </div>
+      </div>
+    `;
+    
+    // Create options for the connection explanations
+    question.options.forEach((option, idx) => {
+      const optionCard = document.createElement('div');
+      optionCard.className = 'option-card connection-option';
+      optionCard.dataset.id = option.id;
+      
+      // Only show numbers 1-4 for keyboard selection
+      const showNumber = idx < 4;
+      const numberHtml = showNumber ? `<span class="option-number">${idx + 1}</span>` : '';
+      
+      optionCard.innerHTML = `
+        ${numberHtml}
+        <p class="connection-text">${option.text}</p>
+      `;
+      
+      optionCard.addEventListener('click', () => selectOption(optionCard, question));
+      optionsDisplay.appendChild(optionCard);
+    });
+  }
   
   // Display slideshow of wrong answers before showing full results
   function displayGameResults(scoreResult) {
@@ -2381,6 +2865,495 @@ document.addEventListener('DOMContentLoaded', function() {
   // Helper Functions
   // ===========================
   
+  // Display an error message toast notification
+  function showErrorMessage(message, duration = 5000) {
+    // Check if we already have a toast container
+    let toastContainer = document.querySelector('.toast-container');
+    
+    // Create container if it doesn't exist
+    if (!toastContainer) {
+      toastContainer = document.createElement('div');
+      toastContainer.className = 'toast-container';
+      document.body.appendChild(toastContainer);
+    }
+    
+    // Create toast element
+    const toast = document.createElement('div');
+    toast.className = 'toast-message error';
+    toast.innerHTML = `
+      <div class="toast-content">
+        <span class="toast-icon">⚠️</span>
+        <span class="toast-text">${message}</span>
+        <button class="toast-close">&times;</button>
+      </div>
+    `;
+    
+    // Add toast to container
+    toastContainer.appendChild(toast);
+    
+    // Add close button functionality
+    const closeBtn = toast.querySelector('.toast-close');
+    closeBtn.addEventListener('click', () => {
+      toast.classList.add('toast-hiding');
+      setTimeout(() => {
+        if (toast.parentNode) {
+          toast.parentNode.removeChild(toast);
+        }
+      }, 300);
+    });
+    
+    // Automatically remove after duration
+    setTimeout(() => {
+      toast.classList.add('toast-hiding');
+      setTimeout(() => {
+        if (toast.parentNode) {
+          toast.parentNode.removeChild(toast);
+        }
+      }, 300);
+    }, duration);
+    
+    // Animate in
+    setTimeout(() => {
+      toast.classList.add('toast-visible');
+    }, 50);
+  }
+  
+  // Display wrong answers history for a student with enhanced error handling
+  function displayWrongAnswersHistory(student) {
+    try {
+      // Validate student data
+      if (!student) {
+        console.error('Error: Student data is missing');
+        showErrorMessage('Unable to display student data: Student not found');
+        return;
+      }
+
+      // Validate performance data
+      if (!student.performance) {
+        console.error('Error: Student performance data is missing', student);
+        showErrorMessage('Unable to display performance data: Data not found');
+        return;
+      }
+
+      // Create a modal to display wrong answers
+      const modal = document.createElement('div');
+      modal.className = 'modal wrong-answers-modal';
+      
+      // Get properly formatted name with fallback
+      let studentName = 'Unknown Student';
+      try {
+        studentName = formatNameWithPreferred(student);
+      } catch (nameErr) {
+        console.error('Error formatting student name:', nameErr);
+        studentName = student.fullName || student.firstName + ' ' + student.lastName || 'Unknown Student';
+      }
+      
+      modal.innerHTML = `
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3>Wrong Answers History: ${studentName}</h3>
+            <button class="close-modal-btn">&times;</button>
+          </div>
+          <div class="modal-body">
+            <div class="wrong-answers-list"></div>
+          </div>
+          <div class="modal-status-bar hidden">
+            <div class="status-message">Loading...</div>
+            <div class="status-spinner"></div>
+          </div>
+        </div>
+      `;
+      
+      document.body.appendChild(modal);
+      
+      // Add keyboard support for closing modal with Escape key
+      const handleKeyDown = (e) => {
+        if (e.key === 'Escape') {
+          modal.remove();
+          document.removeEventListener('keydown', handleKeyDown);
+        }
+      };
+      document.addEventListener('keydown', handleKeyDown);
+      
+      // Add event listener to close the modal
+      const closeBtn = modal.querySelector('.close-modal-btn');
+      closeBtn.addEventListener('click', () => {
+        modal.remove();
+        document.removeEventListener('keydown', handleKeyDown);
+      });
+      
+      // Also close when clicking outside the modal content
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          modal.remove();
+          document.removeEventListener('keydown', handleKeyDown);
+        }
+      });
+      
+      // Get wrong answers list container
+      const wrongAnswersList = modal.querySelector('.wrong-answers-list');
+      
+      // Add loading indicator for better UX
+      const statusBar = modal.querySelector('.modal-status-bar');
+      const showLoading = () => {
+        statusBar.classList.remove('hidden');
+        statusBar.classList.add('loading');
+      };
+      
+      const hideLoading = () => {
+        statusBar.classList.add('hidden');
+        statusBar.classList.remove('loading', 'error');
+      };
+      
+      const showStatus = (message, isError = false) => {
+        const statusMessage = statusBar.querySelector('.status-message');
+        statusMessage.textContent = message;
+        statusBar.classList.remove('hidden');
+        
+        if (isError) {
+          statusBar.classList.add('error');
+          statusBar.classList.remove('loading');
+        }
+      };
+      
+      // Show loading indicator
+      showLoading();
+      
+      // Wrap the rest in a try/catch block to handle errors
+      try {
+        // Check if there are any wrong answers to display
+        if (!Array.isArray(student.performance.wrongAnswers) || student.performance.wrongAnswers.length === 0) {
+          // Hide loading indicator when finished
+          hideLoading();
+          
+          // For debugging purposes, add a simulated wrong answer
+          const simulateBtn = document.createElement('button');
+      simulateBtn.className = 'simulate-wrong-answer-btn';
+      simulateBtn.textContent = 'Simulate Wrong Answer (For Testing)';
+      simulateBtn.style.marginTop = '20px';
+      simulateBtn.style.padding = '10px 15px';
+      simulateBtn.style.backgroundColor = '#4a5568';
+      simulateBtn.style.color = 'white';
+      simulateBtn.style.border = 'none';
+      simulateBtn.style.borderRadius = '4px';
+      simulateBtn.style.cursor = 'pointer';
+      
+      simulateBtn.addEventListener('click', async function() {
+        try {
+          // Create a sample wrong answer
+          const sampleAnswer = {
+            timestamp: new Date().toISOString(),
+            questionType: 'standard',
+            selectedName: 'Wrong Person',
+            selectedId: 'wrong_id',
+            correctName: student.fullName,
+            correctId: student.id
+          };
+          
+          // Add it to the student record
+          student.performance.wrongAnswers = student.performance.wrongAnswers || [];
+          student.performance.wrongAnswers.push(sampleAnswer);
+          
+          // Save it to the DB via API
+          await fetch('/api/game/performance/add-wrong-answer', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              studentId: student.id,
+              wrongAnswer: sampleAnswer
+            })
+          });
+          
+          // Refresh the view
+          displayWrongAnswersHistory(student);
+        } catch (error) {
+          console.error('Error simulating wrong answer:', error);
+          alert('Error simulating wrong answer: ' + error.message);
+        }
+      });
+      
+      wrongAnswersList.innerHTML = '<p class="no-wrong-answers">No detailed wrong answer history available yet. Play more games to collect data about incorrect answers.</p>';
+      wrongAnswersList.appendChild(simulateBtn);
+      return;
+    }
+    
+    // Sort wrong answers by date (most recent first)
+    const sortedWrongAnswers = [...student.performance.wrongAnswers].sort((a, b) => {
+      return new Date(b.timestamp) - new Date(a.timestamp);
+    });
+    
+    // Display each wrong answer
+    sortedWrongAnswers.forEach((wrongAnswer, index) => {
+      const wrongAnswerItem = document.createElement('div');
+      wrongAnswerItem.className = 'wrong-answer-item';
+      
+      // Format timestamp
+      const date = new Date(wrongAnswer.timestamp);
+      const formattedDate = date.toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: 'numeric', 
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+      
+      // Create content based on question type
+      let answerContent = '';
+      
+      if (wrongAnswer.questionType === 'shortAnswer') {
+        // Short answer format - what they typed vs correct answers
+        const correctAnswers = wrongAnswer.correctAnswers 
+          ? wrongAnswer.correctAnswers.map(a => a[0].toUpperCase() + a.slice(1)).join(' or ')
+          : 'N/A';
+        
+        answerContent = `
+          <div class="wrong-answer-details">
+            <p>You typed: <span class="wrong-text">${wrongAnswer.userAnswer || 'N/A'}</span></p>
+            <p>Correct answer(s): <span class="correct-text">${correctAnswers}</span></p>
+          </div>
+        `;
+      } else if (wrongAnswer.questionType === 'standard' || wrongAnswer.questionType === 'hard') {
+        // Standard/hard mode - which name they selected
+        answerContent = `
+          <div class="wrong-answer-details">
+            <p>You selected: <span class="wrong-text">${wrongAnswer.selectedName || 'N/A'}</span></p>
+            <p>Correct answer: <span class="correct-text">${wrongAnswer.correctName || 'N/A'}</span></p>
+            <p class="question-mode">${wrongAnswer.questionType === 'hard' ? 'Hard Mode' : 'Multiple Choice Mode'}</p>
+          </div>
+        `;
+      } else if (wrongAnswer.questionType === 'reverse') {
+        // For reverse mode, we'll need to look up the student names if they're missing
+        let selectedName = wrongAnswer.selectedName;
+        let correctName = wrongAnswer.correctName;
+        
+        // If we're missing names, we need to look them up from the allStudents array
+        if (!selectedName || !correctName) {
+          // Improved approach to get names reliably
+          const lookupNameById = async (studentId) => {
+            if (!studentId) return "Unknown";
+            
+            // First try to extract info from the ID
+            const idMatch = studentId.match(/student_(\d+)_(\d+)/);
+            if (idMatch && idMatch[2]) {
+              const studentNumber = idMatch[2];
+              return `Student #${studentNumber}`; // Fallback to using just the number
+            }
+            
+            // Check if we have students in memory (in window.performanceStatsData)
+            if (window.performanceStatsData && Array.isArray(window.performanceStatsData)) {
+              const student = window.performanceStatsData.find(s => s.id === studentId);
+              if (student) {
+                console.log(`Found student in window.performanceStatsData:`, student);
+                if (student.preferredName) {
+                  return `${student.firstName} '${student.preferredName}' ${student.lastName}`;
+                } else {
+                  return `${student.firstName} ${student.lastName}`;
+                }
+              }
+            }
+            
+            // If we don't have it in memory, try to fetch it directly
+            try {
+              console.log(`Looking up student with ID: ${studentId}`);
+              // Try to fetch this specific student first
+              const response = await fetch(`/api/students/${studentId}`);
+              
+              if (response.ok) {
+                const student = await response.json();
+                console.log(`Found student via API:`, student);
+                
+                if (student.preferredName) {
+                  return `${student.firstName} '${student.preferredName}' ${student.lastName}`;
+                } else {
+                  return `${student.firstName} ${student.lastName}`;
+                }
+              } else {
+                console.warn(`Failed to fetch student with ID ${studentId}, trying to get all students`);
+              }
+            } catch (error) {
+              console.error(`Error looking up individual student ${studentId}:`, error);
+            }
+            
+            // Fallback: fetch all students
+            try {
+              console.log(`Looking up all students to find ID: ${studentId}`);
+              const response = await fetch(`/api/students`);
+              if (!response.ok) {
+                console.error(`Failed to fetch students`);
+                return "Unknown Student";
+              }
+              
+              const allStudents = await response.json();
+              const student = allStudents.find(s => s.id === studentId);
+              console.log(`Found student in all students:`, student);
+              
+              if (!student) return "Unknown Student";
+              
+              // Return formatted name
+              if (student.preferredName) {
+                return `${student.firstName} '${student.preferredName}' ${student.lastName}`;
+              } else {
+                return `${student.firstName} ${student.lastName}`;
+              }
+            } catch (error) {
+              console.error(`Error looking up student ${studentId} in all students:`, error);
+              return "Unknown Student";
+            }
+          };
+          
+          // Update the names by looking them up (this is asynchronous)
+          const updateNames = async () => {
+            try {
+              // First, show loading state
+              const targetElement = document.querySelector(`[data-wrong-answer-id="${wrongAnswer.timestamp}"]`);
+              if (targetElement) {
+                if (!selectedName && wrongAnswer.selectedId) {
+                  const wrongNameElem = targetElement.querySelector('.wrong-name');
+                  if (wrongNameElem) wrongNameElem.textContent = "Loading...";
+                }
+                if (!correctName && wrongAnswer.correctId) {
+                  const correctNameElem = targetElement.querySelector('.correct-name');
+                  if (correctNameElem) correctNameElem.textContent = "Loading...";
+                }
+              }
+              
+              // Fetch both names in parallel for better performance
+              let [newSelectedName, newCorrectName] = ["Unknown", "Unknown"];
+              
+              if (!selectedName && wrongAnswer.selectedId) {
+                newSelectedName = await lookupNameById(wrongAnswer.selectedId);
+              } else {
+                newSelectedName = selectedName || "Unknown";
+              }
+              
+              if (!correctName && wrongAnswer.correctId) {
+                newCorrectName = await lookupNameById(wrongAnswer.correctId);
+              } else {
+                newCorrectName = correctName || "Unknown";
+              }
+              
+              // Now update the content with the retrieved names
+              const nameDebugInfo = JSON.stringify({
+                lookupPerformed: true,
+                selectedId: wrongAnswer.selectedId,
+                correctId: wrongAnswer.correctId,
+                lookupSelectedName: newSelectedName,
+                lookupCorrectName: newCorrectName,
+                timestamp: new Date().toISOString()
+              });
+              
+              // Target the specific element and update it
+              if (targetElement) {
+                const wrongNameElem = targetElement.querySelector('.wrong-name');
+                const correctNameElem = targetElement.querySelector('.correct-name');
+                const debugInfoElem = targetElement.querySelector('.debug-info');
+                
+                if (wrongNameElem) wrongNameElem.textContent = newSelectedName;
+                if (correctNameElem) correctNameElem.textContent = newCorrectName;
+                if (debugInfoElem) debugInfoElem.textContent = nameDebugInfo;
+              } else {
+                console.warn(`Element with data-wrong-answer-id="${wrongAnswer.timestamp}" not found for updating`);
+              }
+            } catch (err) {
+              console.error("Error in updateNames:", err);
+              
+              // Make sure we still update the UI even if there was an error
+              const targetElement = document.querySelector(`[data-wrong-answer-id="${wrongAnswer.timestamp}"]`);
+              if (targetElement) {
+                const wrongNameElem = targetElement.querySelector('.wrong-name');
+                const correctNameElem = targetElement.querySelector('.correct-name');
+                
+                if (wrongNameElem && (!selectedName && wrongAnswer.selectedId)) 
+                  wrongNameElem.textContent = "Error loading name";
+                  
+                if (correctNameElem && (!correctName && wrongAnswer.correctId)) 
+                  correctNameElem.textContent = "Error loading name";
+              }
+            }
+          };
+          
+          // Start the name lookup process
+          setTimeout(updateNames, 100);
+        }
+        
+        // For now, use what we have, the updateNames function will update the DOM later
+        selectedName = selectedName || "Loading...";
+        correctName = correctName || "Loading...";
+        
+        // Add debug for developers to diagnose the issue
+        let debugInfo;
+        try {
+          debugInfo = JSON.stringify({
+            timestamp: wrongAnswer.timestamp,
+            hasStudentName: !!wrongAnswer.studentName,
+            studentName: wrongAnswer.studentName,
+            hasSelectedName: !!wrongAnswer.selectedName,
+            selectedName: wrongAnswer.selectedName,
+            selectedId: wrongAnswer.selectedId,
+            hasCorrectName: !!wrongAnswer.correctName,
+            correctName: wrongAnswer.correctName
+          });
+        } catch (err) {
+          console.error("Error creating debug info:", err);
+          debugInfo = JSON.stringify({error: "Could not create debug info"});
+        }
+        
+        try {
+          const uniqueId = wrongAnswer.timestamp || Math.random().toString(36).substring(2, 15);
+          
+          answerContent = `
+            <div class="wrong-answer-details" data-wrong-answer-id="${uniqueId}">
+              <p>Name: <span class="name-text">${wrongAnswer.studentName || 'N/A'}</span></p>
+              <p>You selected: <span class="wrong-text wrong-name">${selectedName}</span></p>
+              <p>Correct student: <span class="correct-text correct-name">${correctName}</span></p>
+              <p class="question-mode">Reverse Mode (Name → Photo)</p>
+              <p class="debug-info" style="font-size: 8px; color: #ccc; max-width: 100%; word-wrap: break-word;">${debugInfo}</p>
+            </div>
+          `;
+        } catch (err) {
+          console.error("Error creating answer content:", err);
+          answerContent = `
+            <div class="wrong-answer-details">
+              <p>Error rendering wrong answer details</p>
+              <p>Student: ${wrongAnswer.studentName || 'Unknown'}</p>
+            </div>
+          `;
+        }
+      } else {
+        // Generic format if details are incomplete
+        answerContent = `
+          <div class="wrong-answer-details">
+            <p>Answered incorrectly</p>
+            <p class="question-mode">Details not available</p>
+          </div>
+        `;
+      }
+      
+      wrongAnswerItem.innerHTML = `
+        <div class="wrong-answer-header">
+          <span class="wrong-answer-number">#${index + 1}</span>
+          <span class="wrong-answer-date">${formattedDate}</span>
+        </div>
+        ${answerContent}
+      `;
+      
+      wrongAnswersList.appendChild(wrongAnswerItem);
+    });
+    
+        // Hide loading indicator when finished
+        hideLoading();
+      } catch (innerError) {
+        console.error('Error rendering wrong answers:', innerError);
+        showStatus('Error loading wrong answers. Please try again.', true);
+      }
+    } catch (error) {
+      console.error('Error displaying wrong answers history:', error);
+      showErrorMessage('Failed to display wrong answers. Please try again later.');
+    }
+  }
+  
   // Format a name with preferred name styling if needed
   function formatNameWithPreferred(option) {
     if (!option) return 'Unknown';
@@ -2499,9 +3472,16 @@ document.addEventListener('DOMContentLoaded', function() {
         const performance = performanceData[student.id] || {
           correctCount: 0,
           incorrectCount: 0,
+          dontKnowCount: 0,
           attemptCount: 0,
-          successRate: 0
+          successRate: 0,
+          wrongAnswers: []
         };
+        
+        // Ensure wrongAnswers array exists
+        if (!performance.wrongAnswers) {
+          performance.wrongAnswers = [];
+        }
         
         return {
           ...student,
@@ -2612,6 +3592,10 @@ document.addEventListener('DOMContentLoaded', function() {
       // Format the student name with preferred name styling
       let displayName = formatNameWithPreferred(student);
       
+      // Check if student has any wrong answers
+      const hasWrongAnswers = Array.isArray(student.performance.wrongAnswers) && 
+                             student.performance.wrongAnswers.length > 0;
+      
       performanceCard.innerHTML = `
         <img src="${student.imagePath}" alt="${student.fullName}">
         <div class="student-performance-info">
@@ -2624,10 +3608,30 @@ document.addEventListener('DOMContentLoaded', function() {
               ? `Success rate: <span>${Math.round(successRate)}%</span> (${student.performance.correctCount} correct out of ${student.performance.attemptCount} attempts)`
               : 'No attempts yet'}
           </div>
+          ${hasWrongAnswers ? 
+            `<div class="wrong-answers-indicator">
+              <button class="view-wrong-answers-btn" data-student-id="${student.id}">
+                View Wrong Answers (${student.performance.wrongAnswers.length})
+              </button>
+            </div>` : 
+            student.performance.incorrectCount > 0 ? 
+              `<div class="wrong-answers-indicator">
+                <span class="no-detail-note">Wrong answers: ${student.performance.incorrectCount} (Play more games to collect details)</span>
+              </div>` : ''}
         </div>
       `;
       
       studentPerformanceList.appendChild(performanceCard);
+      
+      // Add event listener for viewing wrong answers
+      if (hasWrongAnswers) {
+        const viewWrongAnswersBtn = performanceCard.querySelector('.view-wrong-answers-btn');
+        if (viewWrongAnswersBtn) {
+          viewWrongAnswersBtn.addEventListener('click', () => {
+            displayWrongAnswersHistory(student);
+          });
+        }
+      }
     });
   }
   
@@ -2698,4 +3702,30 @@ document.addEventListener('DOMContentLoaded', function() {
       continueBtn.click();
     }
   });
+
+// Fix to ensure upload tab is active and student list displays correctly on page load
+document.addEventListener('DOMContentLoaded', function() {
+  // Set upload tab as active on page load
+  const uploadTab = document.getElementById('upload-tab');
+  if (uploadTab) {
+    // Remove active class from all tab buttons
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    
+    // Find and activate the upload tab button
+    const uploadTabBtn = document.querySelector('.tab-btn[data-tab="upload-tab"]');
+    if (uploadTabBtn) {
+      uploadTabBtn.classList.add('active');
+    }
+    
+    // Make upload tab visible
+    document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
+    uploadTab.classList.remove('hidden');
+  }
+  
+  // Ensure student list displays as a grid
+  const studentList = document.getElementById('student-list');
+  if (studentList) {
+    studentList.style.display = 'grid';
+  }
+});
 });

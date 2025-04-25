@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Direct Student Display Fix</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .cmd {
+            background-color: #2d3748;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: monospace;
+            margin: 20px 0;
+            position: relative;
+        }
+        .copy-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: #4a5568;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .copy-msg {
+            display: none;
+            position: absolute;
+            top: 10px;
+            right: 80px;
+            color: #68d391;
+        }
+        h1 {
+            color: #2d3748;
+        }
+        h2 {
+            color: #4a5568;
+        }
+        .action-btn {
+            background-color: #4299e1;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+        .action-btn:hover {
+            background-color: #3182ce;
+        }
+        .urgent {
+            background-color: #f7fafc;
+            border-left: 4px solid #f56565;
+            padding: 15px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Direct Student Display Fix</h1>
+    
+    <div class="urgent">
+        <h2>Try This Immediately</h2>
+        <p>Go to the Name Game app, click "Manage Students", and immediately run this exact code in your console (F12):</p>
+    </div>
+    
+    <div class="cmd" id="cmd1">
+        // Force the upload tab to be visible 
+        (function() {
+          // Get all tab content elements
+          var tabs = document.querySelectorAll('.tab-content');
+          
+          // Hide all tabs first
+          for(var i = 0; i < tabs.length; i++) {
+            tabs[i].style.display = 'none';
+          }
+          
+          // Get the upload tab and force it visible
+          var uploadTab = document.getElementById('upload-tab');
+          if(uploadTab) {
+            uploadTab.style.display = 'block';
+            console.log('Force-displayed upload tab');
+          }
+          
+          // Force student list to be visible with grid layout
+          var studentList = document.getElementById('student-list');
+          if(studentList) {
+            studentList.style.display = 'grid';
+            studentList.style.gridTemplateColumns = 'repeat(auto-fill, minmax(200px, 1fr))';
+            studentList.style.gap = '1rem';
+            console.log('Force-displayed student list as grid');
+          }
+        })();
+        <button class="copy-btn" onclick="copyCode('cmd1')">Copy Code</button>
+        <span class="copy-msg" id="msg1">Copied!</span>
+    </div>
+    
+    <p>This code bypasses the tab system completely and forces the elements to be visible using direct style manipulation.</p>
+    
+    <h2>If that doesn't work, try this alternative:</h2>
+    
+    <div class="cmd" id="cmd2">
+        // Create a direct student viewer in the page
+        (function() {
+          // Create container for our custom view
+          var container = document.createElement('div');
+          container.style.margin = '20px';
+          container.style.padding = '20px';
+          container.style.backgroundColor = '#f7fafc';
+          container.style.borderRadius = '8px';
+          container.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1)';
+          
+          // Add heading
+          var heading = document.createElement('h2');
+          heading.textContent = 'Direct Student Viewer';
+          heading.style.marginTop = '0';
+          container.appendChild(heading);
+          
+          // Add status message
+          var status = document.createElement('div');
+          status.textContent = 'Loading students...';
+          container.appendChild(status);
+          
+          // Create grid for students
+          var grid = document.createElement('div');
+          grid.style.display = 'grid';
+          grid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(200px, 1fr))';
+          grid.style.gap = '1rem';
+          grid.style.marginTop = '20px';
+          container.appendChild(grid);
+          
+          // Add container to page (right after header)
+          var header = document.querySelector('.main-header');
+          if(header && header.parentNode) {
+            header.parentNode.insertBefore(container, header.nextSibling);
+          }
+          
+          // Load students
+          fetch('/api/students')
+            .then(response => response.json())
+            .then(students => {
+              status.textContent = `Loaded ${students.length} students`;
+              
+              // Display first 12 students
+              students.slice(0, 12).forEach(student => {
+                var card = document.createElement('div');
+                card.style.backgroundColor = 'white';
+                card.style.borderRadius = '8px';
+                card.style.overflow = 'hidden';
+                card.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+                
+                var img = document.createElement('img');
+                img.src = student.imagePath || 'https://via.placeholder.com/150?text=No+Image';
+                img.alt = student.fullName;
+                img.style.width = '100%';
+                img.style.height = '200px';
+                img.style.objectFit = 'cover';
+                
+                var info = document.createElement('div');
+                info.style.padding = '15px';
+                
+                var name = document.createElement('div');
+                name.textContent = student.fullName;
+                name.style.fontWeight = 'bold';
+                name.style.marginBottom = '8px';
+                
+                info.appendChild(name);
+                card.appendChild(img);
+                card.appendChild(info);
+                
+                grid.appendChild(card);
+              });
+            })
+            .catch(error => {
+              status.textContent = `Error: ${error.message}`;
+              status.style.color = '#e53e3e';
+            });
+        })();
+        <button class="copy-btn" onclick="copyCode('cmd2')">Copy Code</button>
+        <span class="copy-msg" id="msg2">Copied!</span>
+    </div>
+    
+    <h2>Actions</h2>
+    <button class="action-btn" onclick="window.location.href='/fix-student-view.html'">Go to Standalone Student View</button>
+    <button class="action-btn" onclick="window.location.href='/'">Return to Name Game</button>
+    
+    <script>
+        function copyCode(id) {
+            var cmd = document.getElementById(id);
+            var text = cmd.innerText.replace('Copy Code', '').replace('Copied!', '').trim();
+            
+            navigator.clipboard.writeText(text).then(function() {
+                // Show "Copied!" message
+                var msg = document.getElementById('msg' + id.substring(3));
+                msg.style.display = 'inline';
+                
+                // Hide after 2 seconds
+                setTimeout(function() {
+                    msg.style.display = 'none';
+                }, 2000);
+            });
+        }
+    </script>
+</body>
+</html>

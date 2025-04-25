@@ -5,75 +5,187 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Name Game</title>
   <link rel="stylesheet" href="/css/styles.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+  <link rel="shortcut icon" href="/favicon.ico?v=1" type="image/x-icon">
+  <link rel="apple-touch-icon" href="/favicon.png?v=1">
+  <meta name="description" content="A simple game to help you learn and memorize names">
 </head>
 <body>
-  <header>
-    <h1>Name Game</h1>
-  </header>
-  
-  <main>
-    <section id="welcome">
-      <h2>Welcome to the Name Game!</h2>
-      <p>Learn to identify your classmates with this fun game.</p>
+  <div class="container">
+    <header class="main-header">
+      <h1><span class="highlight">Name</span> Game</h1>
+      <p class="tagline">Learn names, improve connections</p>
+    </header>
+    
+    <section id="welcome" class="section-card">
+      <h2>Welcome to the Name Game</h2>
+      <p>A simple tool to help you learn and memorize names more effectively.</p>
       
-      <div class="buttons">
-        <button id="manage-students-btn">Manage Students</button>
-        <button id="play-game-btn">Play Game</button>
+      <div class="welcome-btns">
+        <button id="manage-students-btn" class="primary-btn">Manage Students</button>
+        <button id="play-game-btn" class="primary-btn">Play Game</button>
       </div>
     </section>
     
-    <section id="student-management" class="hidden">
+    <section id="student-management" class="section-card hidden">
       <h2>Student Management</h2>
       
-      <div class="upload-section">
-        <h3>Upload Student PDF</h3>
-        <form id="pdf-upload-form">
-          <input type="file" id="pdf-file" accept=".pdf" required>
-          <button type="submit">Upload & Process</button>
-        </form>
-        <div id="pdf-upload-status"></div>
+      <div class="tab-control">
+        <button class="tab-btn active" data-tab="students-tab">Students</button>
+        <button class="tab-btn" data-tab="tags-tab">Tags</button>
       </div>
       
-      <div class="add-student-section">
+      <div id="students-tab" class="tab-content">
+        <h3>Upload Students</h3>
+        <form id="pdf-upload-form" class="upload-form">
+          <div class="form-group">
+            <label for="pdf-file">Upload Student PDF</label>
+            <input type="file" id="pdf-file" accept=".pdf">
+          </div>
+          <button type="submit">Upload</button>
+          <p id="pdf-upload-status"></p>
+        </form>
+        
         <h3>Add Student Manually</h3>
-        <form id="add-student-form">
+        <form id="add-student-form" class="add-form">
           <div class="form-group">
             <label for="first-name">First Name</label>
             <input type="text" id="first-name" required>
           </div>
+          
           <div class="form-group">
             <label for="last-name">Last Name</label>
             <input type="text" id="last-name" required>
           </div>
+          
           <div class="form-group">
-            <label for="student-image">Student Image</label>
+            <label for="preferred-name">Preferred Name (Nickname)</label>
+            <input type="text" id="preferred-name">
+          </div>
+          
+          <div class="form-group">
+            <label for="student-image">Image (Optional)</label>
             <input type="file" id="student-image" accept="image/*">
           </div>
+          
+          <div class="form-group">
+            <label for="student-tags">Tags (Comma Separated)</label>
+            <input type="text" id="student-tags" placeholder="e.g. finance, international, male">
+          </div>
+          
           <button type="submit">Add Student</button>
         </form>
-      </div>
-      
-      <div class="student-list-section">
+        
+        <div class="batch-tagging-controls">
+          <div class="form-group checkbox-group">
+            <input type="checkbox" id="enable-batch-tagging">
+            <label for="enable-batch-tagging">Enable Batch Tagging Mode</label>
+          </div>
+          
+          <div id="batch-tagging-panel" class="hidden">
+            <div class="form-group checkbox-group">
+              <input type="checkbox" id="select-all-students">
+              <label for="select-all-students">Select All Students</label>
+            </div>
+            
+            <div class="form-group">
+              <label for="batch-tag-select">Tag to Apply</label>
+              <select id="batch-tag-select">
+                <option value="">Select a tag...</option>
+                <!-- Tags will be populated here -->
+              </select>
+            </div>
+            
+            <p id="batch-selection-info">No students selected. Click on student cards to select them for batch tagging.</p>
+            
+            <div class="batch-actions">
+              <button id="apply-batch-tag-btn" disabled>Apply Tag</button>
+              <button id="cancel-batch-tagging">Cancel</button>
+            </div>
+          </div>
+        </div>
+        
         <h3>Student List</h3>
-        <div id="student-list"></div>
+        <div class="filter-controls">
+          <div class="form-group">
+            <label for="filter-tag">Filter by Tag</label>
+            <select id="filter-tag">
+              <option value="">All Students</option>
+              <!-- Tags will be populated here -->
+            </select>
+          </div>
+          
+          <div class="advanced-options">
+            <button type="button" id="toggle-advanced-filters" class="subtle-button">Advanced Filters</button>
+            
+            <div id="advanced-filters" class="hidden">
+              <div class="form-group">
+                <label for="filter-nationality">Nationality</label>
+                <select id="filter-nationality">
+                  <option value="">Any Nationality</option>
+                  <!-- Nationalities will be populated here -->
+                </select>
+              </div>
+              
+              <div class="form-group">
+                <label for="filter-language">Language</label>
+                <select id="filter-language">
+                  <option value="">Any Language</option>
+                  <!-- Languages will be populated here -->
+                </select>
+              </div>
+              
+              <div class="form-group">
+                <label for="filter-gender">Gender</label>
+                <select id="filter-gender">
+                  <option value="">Any Gender</option>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <h3 class="student-list-header">Student List</h3>
+<div id="student-count-display" style="margin: 10px 0;"></div>
+<div id="student-list" class="card-grid" style="display: grid !important; opacity: 1 !important;"></div>
         
         <div class="admin-actions">
-          <button id="flush-db-btn" class="danger-btn">Delete All Students</button>
+          <button id="flush-db-btn" class="danger-btn">Reset All Student Data</button>
+          <button id="repair-db-btn">Repair Database</button>
         </div>
+      </div>
+      
+      <div id="tags-tab" class="tab-content hidden">
+        <h3>Add New Tag</h3>
+        <form id="add-tag-form" class="add-form">
+          <div class="form-group">
+            <label for="tag-name">Tag Name</label>
+            <input type="text" id="tag-name" required placeholder="e.g. finance, international, group-a">
+          </div>
+          <button type="submit">Add Tag</button>
+        </form>
+        
+        <h3>Manage Tags</h3>
+        <div id="tag-list"></div>
       </div>
       
       <button id="back-to-welcome-btn">Back to Main Menu</button>
     </section>
     
-    <section id="game-section" class="hidden">
-      <h2>Let's Play!</h2>
+    <section id="game-section" class="section-card hidden">
+      <h2>Play the Name Game</h2>
       
       <div class="game-options">
         <div class="form-group">
           <label for="game-mode">Game Mode</label>
           <select id="game-mode">
+            <option value="shortAnswer">Type Mode (Photo → Type Name)</option>
             <option value="standard">Standard (Photo → Name)</option>
             <option value="reverse">Reverse (Name → Photo)</option>
+            <option value="hard">Hard Mode (Photo → Name with 30 options)</option>
+            <option value="connectionTrivia">Trivia Mode (Find Connections)</option>
           </select>
         </div>
         
@@ -82,15 +194,57 @@
           <input type="number" id="question-count" min="5" max="20" value="10">
         </div>
         
+        <div class="form-group">
+          <label for="tag-select">Select Tag (Optional)</label>
+          <select id="tag-select">
+            <option value="">All Students</option>
+            <!-- Tags will be populated here -->
+          </select>
+          <span class="tooltip" data-tooltip="Choose a specific group of students to practice with">ⓘ</span>
+          
+          <div class="form-group checkbox-group" style="margin-top: 8px;">
+            <input type="checkbox" id="exclude-tag" name="exclude-tag">
+            <label for="exclude-tag">Exclude Instead of Include</label>
+            <span class="tooltip" data-tooltip="Play with everyone EXCEPT students with this tag">ⓘ</span>
+          </div>
+        </div>
+        
+<!-- Advanced filters removed but data preserved in students.json -->
+        
+        <div class="form-group checkbox-group">
+          <input type="checkbox" id="focus-difficult" name="focus-difficult">
+          <label for="focus-difficult">Focus on Difficult Students</label>
+          <span class="tooltip" data-tooltip="Prioritizes students you've had trouble remembering in the past">ⓘ</span>
+        </div>
+        
+        <div class="form-group checkbox-group">
+          <input type="checkbox" id="only-untried" name="only-untried">
+          <label for="only-untried">Less Practiced Students</label>
+          <span class="tooltip" data-tooltip="Prioritizes students with the fewest practice attempts">ⓘ</span>
+        </div>
+        
+        <div class="form-group checkbox-group">
+          <input type="checkbox" id="use-similar-wrong-answers" name="use-similar-wrong-answers" checked>
+          <label for="use-similar-wrong-answers">Tag-Based Wrong Answers</label>
+          <span class="tooltip" data-tooltip="Select wrong options based on students who share the most tags with the correct answer, creating more challenging and realistic distractors">ⓘ</span>
+        </div>
+        
         <button id="start-game-btn">Start Game</button>
+        
+        <div class="performance-stats-toggle">
+          <button id="view-performance-btn">View Performance Stats</button>
+        </div>
       </div>
       
       <div id="game-container" class="hidden">
+        <div id="active-tag-banner" class="hidden">
+          <span class="active-tag-label">Currently playing with tag:</span>
+          <span class="active-tag-name"></span>
+        </div>
         <div id="question-display"></div>
         <div id="options-display"></div>
         <div id="game-controls">
-          <button id="next-question-btn" disabled>Next Question</button>
-          <button id="finish-game-btn" disabled>Finish Game</button>
+          <button id="continue-btn" disabled>Next Question</button>
         </div>
       </div>
       
@@ -101,14 +255,74 @@
         <button id="play-again-btn">Play Again</button>
       </div>
       
+      <div id="performance-stats" class="hidden">
+        <h3>Student Performance Stats</h3>
+        <p class="stats-description">This shows how well you remember each student based on past games.</p>
+        
+        <div class="stats-actions">
+          <button id="reset-stats-btn" class="danger-btn">Reset All Stats</button>
+          <button id="close-stats-btn">Close Stats</button>
+        </div>
+        
+        <div id="performance-data-container">
+          <div class="performance-filters">
+            <select id="sort-performance">
+              <option value="difficulty">Sort by Difficulty</option>
+              <option value="name">Sort by Name</option>
+              <option value="attempts">Sort by Attempts</option>
+            </select>
+            <select id="filter-performance-tag">
+              <option value="">All Students</option>
+              <!-- Tags will be populated here -->
+            </select>
+          </div>
+          <div id="student-performance-list"></div>
+        </div>
+      </div>
+      
       <button id="back-from-game-btn">Back to Main Menu</button>
     </section>
-  </main>
-  
-  <footer>
-    <p>&copy; 2025 Name Game</p>
-  </footer>
+    
+    <!-- Edit Student Modal -->
+    <div id="edit-student-modal" class="modal hidden" style="z-index: 9999;">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Edit Student</h3>
+          <span class="close-modal">&times;</span>
+        </div>
+        <form id="edit-student-form">
+          <input type="hidden" id="edit-student-id">
+          <div class="form-group">
+            <label for="edit-first-name">First Name</label>
+            <input type="text" id="edit-first-name" required>
+          </div>
+          <div class="form-group">
+            <label for="edit-last-name">Last Name</label>
+            <input type="text" id="edit-last-name" required>
+          </div>
+          <div class="form-group">
+            <label for="edit-preferred-name">Preferred Name (Nickname)</label>
+            <input type="text" id="edit-preferred-name">
+          </div>
+          <div class="form-group">
+            <label for="edit-student-image">Update Image</label>
+            <input type="file" id="edit-student-image" accept="image/*">
+            <div id="current-image-preview"></div>
+          </div>
+          <div class="form-group">
+            <label for="edit-student-tags">Tags (Comma Separated)</label>
+            <input type="text" id="edit-student-tags" placeholder="e.g. finance, international, male">
+          </div>
+          <div class="form-actions">
+            <button type="submit">Save Changes</button>
+            <button type="button" id="cancel-edit-btn">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
   
   <script src="/js/app.js"></script>
+<script src="/js/tab-display-fix.js"></script>
 </body>
 </html>

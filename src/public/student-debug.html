@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Debug Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 20px;
+        }
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+        .student-card {
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .student-img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+        .student-info {
+            padding: 15px;
+        }
+        .student-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .student-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-top: 10px;
+        }
+        .tag {
+            background-color: #f0f0f0;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        #status {
+            margin-bottom: 20px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Student Debug Page</h1>
+    <div id="status">Loading...</div>
+    <button id="load-btn">Load Students</button>
+    <div id="student-list" class="card-grid"></div>
+
+    <script>
+        const statusDisplay = document.getElementById('status');
+        const studentList = document.getElementById('student-list');
+        const loadBtn = document.getElementById('load-btn');
+
+        // Load students when button is clicked
+        loadBtn.addEventListener('click', () => {
+            loadStudents();
+        });
+
+        async function loadStudents() {
+            try {
+                statusDisplay.textContent = 'Fetching students...';
+                const response = await fetch('/api/students');
+                
+                if (!response.ok) {
+                    throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+                }
+                
+                const students = await response.json();
+                statusDisplay.textContent = `Loaded ${students.length} students`;
+                displayStudents(students);
+            } catch (error) {
+                statusDisplay.textContent = `Error: ${error.message}`;
+                console.error('Error loading students:', error);
+            }
+        }
+
+        function displayStudents(students) {
+            studentList.innerHTML = '';
+            
+            if (!students || students.length === 0) {
+                studentList.innerHTML = '<p>No students found.</p>';
+                return;
+            }
+            
+            students.forEach(student => {
+                const studentCard = document.createElement('div');
+                studentCard.className = 'student-card';
+                
+                // Image
+                const imgSrc = student.imagePath || 'https://via.placeholder.com/150?text=No+Image';
+                
+                // Create HTML for student card
+                studentCard.innerHTML = `
+                    <img class="student-img" src="${imgSrc}" alt="${student.fullName}">
+                    <div class="student-info">
+                        <div class="student-name">${student.fullName}</div>
+                        <div class="student-tags">
+                            ${student.tags && Array.isArray(student.tags) ? 
+                                student.tags.map(tag => `<span class="tag">${tag}</span>`).join('') : ''}
+                        </div>
+                    </div>
+                `;
+                
+                studentList.appendChild(studentCard);
+            });
+        }
+    </script>
+</body>
+</html>

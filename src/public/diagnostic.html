@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Name Game Debug Console</title>
+    <style>
+        body {
+            font-family: monospace;
+            background-color: #282c34;
+            color: #abb2bf;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background-color: #3c4049;
+            padding: 15px;
+            border-radius: 5px 5px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 {
+            margin: 0;
+            color: #61afef;
+        }
+        .actions {
+            display: flex;
+            gap: 10px;
+        }
+        .btn {
+            background-color: #4b5363;
+            color: #e5c07b;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: monospace;
+        }
+        .btn:hover {
+            background-color: #545b6b;
+        }
+        .primary {
+            background-color: #56b6c2;
+            color: #282c34;
+        }
+        .primary:hover {
+            background-color: #4fa8b3;
+        }
+        .danger {
+            background-color: #e06c75;
+            color: #282c34;
+        }
+        .danger:hover {
+            background-color: #d06070;
+        }
+        .console {
+            background-color: #21252b;
+            padding: 15px;
+            border-radius: 0 0 5px 5px;
+            min-height: 300px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+        }
+        .log {
+            margin: 5px 0;
+            padding: 5px;
+            border-radius: 3px;
+        }
+        .log pre {
+            margin: 0;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .log-info {
+            color: #61afef;
+        }
+        .log-success {
+            color: #98c379;
+        }
+        .log-error {
+            color: #e06c75;
+        }
+        .log-warn {
+            color: #e5c07b;
+        }
+        .fixers {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .fixer {
+            background-color: #2c313a;
+            border-radius: 5px;
+            padding: 15px;
+        }
+        .fixer h3 {
+            margin-top: 0;
+            color: #c678dd;
+        }
+        .code {
+            background-color: #1c1f25;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            overflow-x: auto;
+        }
+        .code pre {
+            margin: 0;
+            color: #abb2bf;
+        }
+        .copy {
+            display: inline-block;
+            float: right;
+            background-color: #4b5363;
+            color: #e5c07b;
+            border: none;
+            padding: 3px 6px;
+            border-radius: 3px;
+            font-size: 12px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+        .copy:hover {
+            background-color: #545b6b;
+        }
+        .element-debug {
+            border: 1px solid #3e4451;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .property {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px solid #3e4451;
+        }
+        .property-name {
+            color: #61afef;
+        }
+        .property-value {
+            color: #98c379;
+        }
+        .links {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .links a {
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Name Game Debug Console</h1>
+            <div class="actions">
+                <button id="run-diagnostics" class="btn primary">Run Diagnostics</button>
+                <button id="clear-console" class="btn">Clear Console</button>
+                <button id="take-screenshot" class="btn">📸 Screenshot DOM</button>
+            </div>
+        </div>
+        
+        <div id="console" class="console">
+            <div class="log log-info">
+                <pre>Debug console initialized. Click "Run Diagnostics" to check the Name Game application.</pre>
+            </div>
+        </div>
+        
+        <div class="fixers">
+            <div class="fixer">
+                <h3>Student List Restorer</h3>
+                <p>Creates a new student list directly in the page, bypassing all tab and visibility issues.</p>
+                <div class="code">
+                    <button class="copy" onclick="copyToClipboard('code1')">Copy</button>
+                    <pre id="code1">// Create a new student list
+(function() {
+  fetch('/api/students')
+    .then(response => response.json())
+    .then(students => {
+      // Create container
+      const container = document.createElement('div');
+      container.style.cssText = 'padding: 20px; background: white; border-radius: 8px; margin: 20px 0;';
+      
+      // Create heading
+      const heading = document.createElement('h2');
+      heading.textContent = `Students (${students.length})`;
+      container.appendChild(heading);
+      
+      // Create grid
+      const grid = document.createElement('div');
+      grid.style.cssText = 'display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px;';
+      container.appendChild(grid);
+      
+      // Add students
+      students.slice(0, 20).forEach(student => {
+        const card = document.createElement('div');
+        card.style.cssText = 'border: 1px solid #eee; border-radius: 8px; overflow: hidden;';
+        
+        const img = document.createElement('img');
+        img.src = student.imagePath || '/uploads/student-images/placeholder.png';
+        img.style.cssText = 'width: 100%; height: 200px; object-fit: cover;';
+        
+        const info = document.createElement('div');
+        info.style.cssText = 'padding: 10px;';
+        info.innerText = student.fullName;
+        
+        card.appendChild(img);
+        card.appendChild(info);
+        grid.appendChild(card);
+      });
+      
+      // Add to page
+      document.body.insertBefore(container, document.body.firstChild);
+    });
+})();</pre>
+                </div>
+                <button class="btn primary" onclick="runFixer('code1')">Run This Fix</button>
+            </div>
+            
+            <div class="fixer">
+                <h3>Tab System Explorer</h3>
+                <p>Analyzes the tab system and attempts to fix issues by directly controlling CSS.</p>
+                <div class="code">
+                    <button class="copy" onclick="copyToClipboard('code2')">Copy</button>
+                    <pre id="code2">// Analyze and fix tab system
+(function() {
+  console.log('TAB SYSTEM EXPLORER');
+  
+  const tabs = document.querySelectorAll('.tab-content');
+  console.log(`Found ${tabs.length} tab elements`);
+  
+  tabs.forEach((tab, index) => {
+    const id = tab.id || `tab-${index}`;
+    const display = getComputedStyle(tab).display;
+    const hasActiveClass = tab.classList.contains('active');
+    
+    console.log(`Tab #${index}: ${id} (display: ${display}, active: ${hasActiveClass})`);
+    
+    // Fix all tabs that should be active
+    if (id === 'upload-tab') {
+      console.log('  -> Setting upload-tab to display:block and adding active class');
+      tab.style.setProperty('display', 'block', 'important');
+      tab.classList.add('active');
+      
+      // Also fix the tab button
+      const btn = document.getElementById('upload-tab-btn');
+      if (btn) {
+        btn.classList.add('active');
+      }
+      
+      // Find student list and fix it
+      const studentList = tab.querySelector('#student-list');
+      if (studentList) {
+        console.log('  -> Setting student-list to display:grid');
+        studentList.style.setProperty('display', 'grid', 'important');
+        studentList.style.setProperty('grid-template-columns', 'repeat(auto-fill, minmax(200px, 1fr))', 'important');
+        studentList.style.setProperty('gap', '1rem', 'important');
+      } else {
+        console.log('  -> Could not find student-list inside tab');
+      }
+    }
+  });
+})();</pre>
+                </div>
+                <button class="btn primary" onclick="runFixer('code2')">Run This Fix</button>
+            </div>
+            
+            <div class="fixer">
+                <h3>Deep DOM Surgery</h3>
+                <p>Performs deeper DOM manipulation by recreating the student list element.</p>
+                <div class="code">
+                    <button class="copy" onclick="copyToClipboard('code3')">Copy</button>
+                    <pre id="code3">// Deep DOM Surgery
+(function() {
+  console.log('DEEP DOM SURGERY');
+  
+  // Get upload tab element
+  const uploadTab = document.getElementById('upload-tab');
+  if (!uploadTab) {
+    console.error('Upload tab not found');
+    return;
+  }
+  
+  // Force display
+  uploadTab.style.setProperty('display', 'block', 'important');
+  uploadTab.classList.add('active');
+  
+  // Get the student list
+  const studentList = document.getElementById('student-list');
+  if (!studentList) {
+    console.error('Student list not found');
+    return;
+  }
+  
+  // Get current container
+  const container = studentList.parentElement;
+  
+  // Create replacement student list
+  const newStudentList = document.createElement('div');
+  newStudentList.id = 'student-list-fixed';
+  newStudentList.className = 'card-grid';
+  newStudentList.style.cssText = 'display: grid !important; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)) !important; gap: 1.5rem !important;';
+  
+  // Add a loading message
+  const loadingMsg = document.createElement('div');
+  loadingMsg.style.cssText = 'grid-column: 1/-1; text-align: center; padding: 20px;';
+  loadingMsg.textContent = 'Loading students...';
+  newStudentList.appendChild(loadingMsg);
+  
+  // Insert new element
+  container.insertBefore(newStudentList, studentList);
+  
+  // Fetch and display students
+  fetch('/api/students')
+    .then(response => response.json())
+    .then(students => {
+      // Clear loading message
+      newStudentList.innerHTML = '';
+      
+      // Add students
+      students.slice(0, 20).forEach(student => {
+        const card = document.createElement('div');
+        card.className = 'student-card';
+        
+        const img = document.createElement('img');
+        img.className = 'student-img';
+        img.src = student.imagePath || '/uploads/student-images/placeholder.png';
+        
+        const info = document.createElement('div');
+        info.className = 'student-info';
+        
+        const name = document.createElement('div');
+        name.className = 'student-name';
+        name.textContent = student.fullName;
+        
+        info.appendChild(name);
+        card.appendChild(img);
+        card.appendChild(info);
+        
+        newStudentList.appendChild(card);
+      });
+      
+      console.log(`Displayed ${students.length} students in new container`);
+    })
+    .catch(error => {
+      console.error('Error fetching students:', error);
+      newStudentList.innerHTML = '<div style="color: red; padding: 20px;">Error loading students</div>';
+    });
+})();</pre>
+                </div>
+                <button class="btn primary" onclick="runFixer('code3')">Run This Fix</button>
+            </div>
+            
+            <div class="fixer">
+                <h3>CSS Rules Inspector</h3>
+                <p>Analyzes all CSS rules affecting the student list element.</p>
+                <div class="code">
+                    <button class="copy" onclick="copyToClipboard('code4')">Copy</button>
+                    <pre id="code4">// CSS Rules Inspector
+(function() {
+  console.log('CSS RULES INSPECTOR');
+  
+  const studentList = document.getElementById('student-list');
+  if (!studentList) {
+    console.error('Student list element not found');
+    return;
+  }
+  
+  console.log('Student list element:', studentList);
+  
+  // Get all stylesheets
+  const allRules = [];
+  for (let i = 0; i < document.styleSheets.length; i++) {
+    try {
+      const sheet = document.styleSheets[i];
+      const rules = sheet.cssRules || sheet.rules;
+      
+      for (let j = 0; j < rules.length; j++) {
+        const rule = rules[j];
+        
+        // Check if this rule applies to the student list
+        if (studentList.matches(rule.selectorText)) {
+          allRules.push({
+            selector: rule.selectorText,
+            css: rule.style.cssText,
+            sheet: sheet.href || 'inline'
+          });
+        }
+      }
+    } catch (e) {
+      console.warn('Could not access stylesheet:', e);
+    }
+  }
+  
+  console.log('CSS Rules affecting student list:', allRules);
+  
+  // Show the computed style
+  const style = window.getComputedStyle(studentList);
+  console.log('Computed style for student list:');
+  console.log('- display:', style.display);
+  console.log('- visibility:', style.visibility);
+  console.log('- opacity:', style.opacity);
+  console.log('- position:', style.position);
+  
+  // Check parent elements
+  let parent = studentList.parentElement;
+  let depth = 0;
+  
+  while (parent && depth < 5) {
+    const parentStyle = window.getComputedStyle(parent);
+    console.log(`Parent (${parent.tagName}${parent.id ? '#'+parent.id : ''}${parent.className ? '.'+parent.className.replace(/ /g, '.') : ''}):`, {
+      display: parentStyle.display,
+      visibility: parentStyle.visibility,
+      opacity: parentStyle.opacity,
+      position: parentStyle.position
+    });
+    
+    parent = parent.parentElement;
+    depth++;
+  }
+})();</pre>
+                </div>
+                <button class="btn primary" onclick="runFixer('code4')">Run This Fix</button>
+            </div>
+        </div>
+        
+        <div class="links">
+            <a href="/fix-student-view.html"><button class="btn">Standalone Student View</button></a>
+            <a href="/"><button class="btn">Return to App</button></a>
+        </div>
+    </div>
+    
+    <script>
+        const consoleElement = document.getElementById('console');
+        
+        // Log to our custom console
+        function log(message, type = 'info') {
+            const logElement = document.createElement('div');
+            logElement.className = `log log-${type}`;
+            
+            const pre = document.createElement('pre');
+            
+            // Handle objects
+            if (typeof message === 'object') {
+                try {
+                    pre.textContent = JSON.stringify(message, null, 2);
+                } catch (e) {
+                    pre.textContent = '[Object could not be stringified]';
+                }
+            } else {
+                pre.textContent = message;
+            }
+            
+            logElement.appendChild(pre);
+            consoleElement.appendChild(logElement);
+            
+            // Auto-scroll to bottom
+            consoleElement.scrollTop = consoleElement.scrollHeight;
+        }
+        
+        // Clear console
+        document.getElementById('clear-console').addEventListener('click', function() {
+            consoleElement.innerHTML = '';
+            log('Console cleared.', 'info');
+        });
+        
+        // Run diagnostics
+        document.getElementById('run-diagnostics').addEventListener('click', function() {
+            log('Running diagnostics...', 'info');
+            
+            // Open the app in a new window and run diagnostics
+            const newWindow = window.open('/', '_blank');
+            
+            if (!newWindow) {
+                log('Popup blocked! Please allow popups and try again.', 'error');
+                return;
+            }
+            
+            newWindow.addEventListener('load', function() {
+                // Execute a series of diagnostic checks
+                newWindow.eval(`
+                    // Tell the user what's happening
+                    console.log = function(message) {
+                        window.opener.document.querySelector('#console').appendChild(
+                            Object.assign(document.createElement('div'), {
+                                className: 'log log-info', 
+                                innerHTML: '<pre>' + message + '</pre>'
+                            })
+                        );
+                        window.opener.document.querySelector('#console').scrollTop = 
+                            window.opener.document.querySelector('#console').scrollHeight;
+                        return message;
+                    };
+                    
+                    console.error = function(message) {
+                        window.opener.document.querySelector('#console').appendChild(
+                            Object.assign(document.createElement('div'), {
+                                className: 'log log-error', 
+                                innerHTML: '<pre>' + message + '</pre>'
+                            })
+                        );
+                        window.opener.document.querySelector('#console').scrollTop = 
+                            window.opener.document.querySelector('#console').scrollHeight;
+                        return message;
+                    };
+                    
+                    // Click "Manage Students" after a short delay
+                    setTimeout(function() {
+                        console.log('Clicking "Manage Students" button...');
+                        const manageBtn = document.getElementById('manage-students-btn');
+                        if (manageBtn) {
+                            manageBtn.click();
+                            console.log('Manage Students clicked');
+                            
+                            // Run diagnostics after tab switch completes
+                            setTimeout(function() {
+                                runTabDiagnostics();
+                            }, 500);
+                        } else {
+                            console.error('Manage Students button not found');
+                        }
+                    }, 1000);
+                    
+                    // Main diagnostic function
+                    function runTabDiagnostics() {
+                        console.log('\\n==== RUNNING DIAGNOSTICS ====\\n');
+                        
+                        // Check the student management element
+                        const studentManagement = document.getElementById('student-management');
+                        if (!studentManagement) {
+                            console.error('Student management element not found');
+                            return;
+                        }
+                        
+                        // Check if it's visible
+                        const studentManagementStyle = window.getComputedStyle(studentManagement);
+                        console.log('Student management display: ' + studentManagementStyle.display);
+                        
+                        // Check the tab elements
+                        const uploadTab = document.getElementById('upload-tab');
+                        if (!uploadTab) {
+                            console.error('Upload tab element not found');
+                        } else {
+                            const uploadTabStyle = window.getComputedStyle(uploadTab);
+                            console.log('Upload tab display: ' + uploadTabStyle.display);
+                            console.log('Upload tab has active class: ' + uploadTab.classList.contains('active'));
+                        }
+                        
+                        // Check the student list
+                        const studentList = document.getElementById('student-list');
+                        if (!studentList) {
+                            console.error('Student list element not found');
+                        } else {
+                            const studentListStyle = window.getComputedStyle(studentList);
+                            console.log('Student list display: ' + studentListStyle.display);
+                            console.log('Student list parent element: ' + (studentList.parentElement ? studentList.parentElement.id || studentList.parentElement.tagName : 'none'));
+                            
+                            // Check parent visibility
+                            if (studentList.parentElement) {
+                                const parentStyle = window.getComputedStyle(studentList.parentElement);
+                                console.log('Student list parent display: ' + parentStyle.display);
+                            }
+                            
+                            // Check for any students
+                            console.log('Student list children count: ' + studentList.children.length);
+                        }
+                        
+                        // Check if students are being loaded
+                        fetch('/api/students')
+                            .then(response => response.json())
+                            .then(students => {
+                                console.log('Successfully fetched ' + students.length + ' students from API');
+                            })
+                            .catch(error => {
+                                console.error('Error fetching students: ' + error.message);
+                            });
+                            
+                        console.log('\\n==== DIAGNOSTICS COMPLETE ====\\n');
+                    }
+                `);
+            });
+        });
+        
+        // Screenshot DOM
+        document.getElementById('take-screenshot').addEventListener('click', function() {
+            log('Taking DOM screenshot...', 'info');
+            
+            // Open the app in a new window and capture DOM structure
+            const newWindow = window.open('/', '_blank');
+            
+            if (!newWindow) {
+                log('Popup blocked! Please allow popups and try again.', 'error');
+                return;
+            }
+            
+            newWindow.addEventListener('load', function() {
+                // Tell the user what's happening
+                log('Page loaded, capturing DOM structure...', 'info');
+                
+                // Give the page time to fully load
+                setTimeout(function() {
+                    // Click "Manage Students" 
+                    newWindow.eval(`
+                        // Click the manage students button
+                        const manageBtn = document.getElementById('manage-students-btn');
+                        if (manageBtn) {
+                            manageBtn.click();
+                            console.log('Clicked Manage Students');
+                        } else {
+                            console.error('Manage Students button not found');
+                        }
+                    `);
+                    
+                    // Give time for the tab to switch
+                    setTimeout(function() {
+                        // Capture DOM structure
+                        const domStructure = newWindow.eval(`
+                            function getElementInfo(element, depth = 0) {
+                                if (!element) return null;
+                                
+                                const style = window.getComputedStyle(element);
+                                
+                                let children = [];
+                                for (let i = 0; i < Math.min(element.children.length, 10); i++) {
+                                    if (depth < 3) { // Limit depth to prevent huge output
+                                        children.push(getElementInfo(element.children[i], depth + 1));
+                                    } else {
+                                        children.push({
+                                            tag: element.children[i].tagName,
+                                            id: element.children[i].id,
+                                            className: element.children[i].className,
+                                            childCount: element.children[i].children.length
+                                        });
+                                    }
+                                }
+                                
+                                return {
+                                    tag: element.tagName,
+                                    id: element.id,
+                                    className: element.className,
+                                    display: style.display,
+                                    visibility: style.visibility,
+                                    opacity: style.opacity,
+                                    position: style.position,
+                                    zIndex: style.zIndex,
+                                    width: style.width,
+                                    height: style.height,
+                                    childCount: element.children.length,
+                                    children: children
+                                };
+                            }
+                            
+                            // Get the relevant elements
+                            const studentManagement = document.getElementById('student-management');
+                            const uploadTab = document.getElementById('upload-tab');
+                            const studentList = document.getElementById('student-list');
+                            
+                            return {
+                                studentManagement: getElementInfo(studentManagement),
+                                uploadTab: getElementInfo(uploadTab),
+                                studentList: getElementInfo(studentList)
+                            };
+                        `);
+                        
+                        log('DOM Structure Captured:', 'success');
+                        log(domStructure, 'info');
+                        
+                        // Close the window
+                        newWindow.close();
+                    }, 1000);
+                }, 1000);
+            });
+        });
+        
+        // Copy code to clipboard
+        function copyToClipboard(id) {
+            const code = document.getElementById(id).textContent;
+            navigator.clipboard.writeText(code);
+            
+            // Show copied message
+            const copyBtn = document.querySelector(`#${id} + .copy`);
+            const originalText = copyBtn.textContent;
+            copyBtn.textContent = 'Copied!';
+            setTimeout(() => {
+                copyBtn.textContent = originalText;
+            }, 2000);
+        }
+        
+        // Run fixer code
+        function runFixer(id) {
+            log(`Running fixer: ${id}`, 'info');
+            
+            // Get the code to run
+            const code = document.getElementById(id).textContent;
+            
+            // Open the app in a new window and run the fixer
+            const newWindow = window.open('/', '_blank');
+            
+            if (!newWindow) {
+                log('Popup blocked! Please allow popups and try again.', 'error');
+                return;
+            }
+            
+            newWindow.addEventListener('load', function() {
+                // Click "Manage Students" first
+                newWindow.eval(`
+                    // Click the manage students button
+                    const manageBtn = document.getElementById('manage-students-btn');
+                    if (manageBtn) {
+                        manageBtn.click();
+                    }
+                `);
+                
+                // Give time for the tab to switch
+                setTimeout(function() {
+                    // Forward console logs to our console
+                    newWindow.eval(`
+                        // Override console.log
+                        const originalLog = console.log;
+                        console.log = function(message) {
+                            // Call original function
+                            originalLog.apply(console, arguments);
+                            
+                            // Send to parent window
+                            try {
+                                let messageText;
+                                if (typeof message === 'object') {
+                                    messageText = JSON.stringify(message, null, 2);
+                                } else {
+                                    messageText = message;
+                                }
+                                
+                                window.opener.document.querySelector('#console').appendChild(
+                                    Object.assign(document.createElement('div'), {
+                                        className: 'log log-info', 
+                                        innerHTML: '<pre>' + messageText + '</pre>'
+                                    })
+                                );
+                                window.opener.document.querySelector('#console').scrollTop = 
+                                    window.opener.document.querySelector('#console').scrollHeight;
+                            } catch (e) {
+                                // Ignore errors
+                            }
+                        };
+                        
+                        // Override console.error
+                        const originalError = console.error;
+                        console.error = function(message) {
+                            // Call original function
+                            originalError.apply(console, arguments);
+                            
+                            // Send to parent window
+                            try {
+                                let messageText;
+                                if (typeof message === 'object') {
+                                    messageText = JSON.stringify(message, null, 2);
+                                } else {
+                                    messageText = message;
+                                }
+                                
+                                window.opener.document.querySelector('#console').appendChild(
+                                    Object.assign(document.createElement('div'), {
+                                        className: 'log log-error', 
+                                        innerHTML: '<pre>' + messageText + '</pre>'
+                                    })
+                                );
+                                window.opener.document.querySelector('#console').scrollTop = 
+                                    window.opener.document.querySelector('#console').scrollHeight;
+                            } catch (e) {
+                                // Ignore errors
+                            }
+                        };
+                    `);
+                    
+                    // Run the fixer code
+                    try {
+                        newWindow.eval(code);
+                        log('Fixer executed successfully', 'success');
+                    } catch (error) {
+                        log(`Error executing fixer: ${error.message}`, 'error');
+                    }
+                }, 1000);
+            });
+        }
+    </script>
+</body>
+</html>

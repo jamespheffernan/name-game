@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Install Name Game Fix</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            margin-bottom: 30px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #3b82f6;
+        }
+        .box {
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        pre {
+            background-color: #f1f5f9;
+            padding: 15px;
+            border-radius: 6px;
+            overflow-x: auto;
+        }
+        button {
+            background-color: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #2563eb;
+        }
+        .success {
+            background-color: #ecfdf5;
+            border-color: #a7f3d0;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+            display: none;
+        }
+        .tip {
+            background-color: #eff6ff;
+            border-left: 4px solid #3b82f6;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin: 30px 0;
+        }
+        .options a {
+            flex: 1;
+            min-width: 200px;
+            text-align: center;
+            text-decoration: none;
+        }
+        .options button {
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <h1>Name Game Student Display Fix</h1>
+    
+    <div class="box">
+        <h2>One-Click Solution</h2>
+        <p>Click the button below to fix the student display issue in the Name Game application:</p>
+        <button id="install-btn">Install Quick Fix</button>
+        <div id="success-message" class="success">
+            <p><strong>Success!</strong> The fix has been installed.</p>
+            <p>Now <a href="/" target="_blank">open the Name Game</a> in a new tab and click on "Manage Students".</p>
+            <p>You should see a new "Fix Student Display" button in the header, and additional tools in the Student Management section.</p>
+        </div>
+    </div>
+    
+    <div class="tip">
+        <p><strong>How this fix works:</strong> This script adds buttons to the interface that allow you to manually fix the student display or load students directly. It also attempts to fix display issues automatically when you navigate to the Student Management tab.</p>
+    </div>
+    
+    <div class="box">
+        <h2>Manual Installation</h2>
+        <p>If the automatic installation doesn't work, you can manually add this script to your browser:</p>
+        <pre><code>&lt;script src="/quick-fix.js"&gt;&lt;/script&gt;</code></pre>
+        <p>Copy the code above and paste it into your browser's console when you're on the Name Game page.</p>
+    </div>
+    
+    <div class="options">
+        <a href="/fix-student-view.html"><button>Standalone Student View</button></a>
+        <a href="/fix-inline.html"><button>Console Fix Instructions</button></a>
+        <a href="/" target="_blank"><button>Open Name Game</button></a>
+    </div>
+    
+    <script>
+        document.getElementById('install-btn').addEventListener('click', function() {
+            // Create a script loading function that will be executed in the Name Game page
+            const installScript = `
+                // Check if already installed
+                if (!document.getElementById('quick-fix-script')) {
+                    // Create script element
+                    const script = document.createElement('script');
+                    script.id = 'quick-fix-script';
+                    script.src = '/quick-fix.js';
+                    script.onload = function() {
+                        console.log('Quick fix script loaded successfully');
+                    };
+                    script.onerror = function() {
+                        console.error('Failed to load quick fix script');
+                    };
+                    
+                    // Add to document
+                    document.head.appendChild(script);
+                    console.log('Quick fix script added to page');
+                } else {
+                    console.log('Quick fix script already installed');
+                }
+            `;
+            
+            // Apply the fix by opening the main page and injecting our script
+            const newWindow = window.open('/', '_blank');
+            
+            // Message when window loads
+            if (newWindow) {
+                newWindow.addEventListener('load', function() {
+                    newWindow.eval(installScript);
+                });
+                
+                // Show success message
+                document.getElementById('success-message').style.display = 'block';
+            } else {
+                alert('Popup blocked! Please allow popups and try again.');
+            }
+        });
+    </script>
+</body>
+</html>

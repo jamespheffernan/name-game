@@ -97,6 +97,35 @@ async function initDb() {
 }
 
 /**
+ * Get a student by ID
+ * @param {string} id - The student ID to retrieve
+ * @returns {Promise<Object|null>} The student object or null if not found
+ */
+async function getStudentById(id) {
+  try {
+    await initDb();
+    const data = await fs.readJson(dbPath);
+    const student = data.students.find(student => student.id === id);
+    
+    if (!student) return null;
+    
+    // Ensure tags is an array
+    if (!student.tags) {
+      return { ...student, tags: [] };
+    } else if (!Array.isArray(student.tags)) {
+      // If tags is not an array, convert to empty array
+      console.warn(`Student ${student.id} has invalid tags format. Resetting tags.`);
+      return { ...student, tags: [] };
+    }
+    
+    return student;
+  } catch (error) {
+    console.error(`Error getting student by ID ${id}:`, error);
+    throw error;
+  }
+}
+
+/**
  * Get all students from the database
  * @returns {Promise<Array>} Array of student objects
  */
@@ -518,6 +547,7 @@ async function removeStudentFromTag(tagName, studentId) {
 module.exports = {
   initDb,
   getAllStudents,
+  getStudentById,
   addStudents,
   updateStudent,
   deleteStudent,

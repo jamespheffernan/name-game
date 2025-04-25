@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Name Game Test Runner</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    header {
+      background-color: #4a5568;
+      color: white;
+      padding: 1rem;
+      text-align: center;
+      border-radius: 6px;
+      margin-bottom: 2rem;
+    }
+    
+    .test-card {
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+    
+    .test-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+    }
+    
+    .test-card h3 {
+      margin-top: 0;
+      border-bottom: 1px solid #e2e8f0;
+      padding-bottom: 0.5rem;
+    }
+    
+    .test-buttons {
+      display: flex;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    
+    button {
+      background-color: #4a5568;
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    
+    button:hover {
+      background-color: #2d3748;
+    }
+    
+    footer {
+      margin-top: 2rem;
+      text-align: center;
+      color: #718096;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Name Game Test Runner</h1>
+  </header>
+  
+  <main>
+    <div class="test-card">
+      <h3>Slideshow Component Test</h3>
+      <p>Tests the slideshow component that shows wrong answers at the end of a game.</p>
+      <p><strong>What's being tested:</strong> Slideshow navigation, overriding answers, skipping overridden answers, different game modes.</p>
+      
+      <div class="test-buttons">
+        <button onclick="window.open('slideshow_test.html', '_blank')">Run Test</button>
+      </div>
+    </div>
+    
+    <div class="test-card">
+      <h3>Mark Answer As Correct Helper Function Test</h3>
+      <p>Tests the helper function that marks a wrong answer as correct during the slideshow review.</p>
+      <p><strong>What's being tested:</strong> Score updates, performance stats updates, handling "Don't Know" answers.</p>
+      
+      <div class="test-buttons">
+        <button onclick="runNodeTest('mark_answer_test.js')">Run Test</button>
+        <button onclick="window.open('mark_answer_test.js', '_blank')">View Code</button>
+      </div>
+    </div>
+    
+    <div class="test-card">
+      <h3>Integration Testing</h3>
+      <p>Tests the overall flow of the name game application.</p>
+      <p><strong>Manual testing steps:</strong></p>
+      <ol>
+        <li>Start a game with at least 5 questions</li>
+        <li>Deliberately get some answers wrong (including a "Don't Know")</li>
+        <li>Complete the game to see the slideshow</li>
+        <li>Override at least one answer during the slideshow</li>
+        <li>Verify that the overridden answer is marked as correct in the final results</li>
+      </ol>
+      
+      <div class="test-buttons">
+        <button onclick="window.open('../src/views/index.html', '_blank')">Open Game</button>
+      </div>
+    </div>
+    
+    <div class="test-card">
+      <h3>Test Documentation</h3>
+      <p>View the test documentation for more details on the testing approach.</p>
+      
+      <div class="test-buttons">
+        <button onclick="window.open('README.md', '_blank')">View Documentation</button>
+      </div>
+    </div>
+  </main>
+  
+  <footer>
+    <p>Name Game Test Suite &copy; 2025</p>
+  </footer>
+
+  <script>
+    function runNodeTest(testFile) {
+      alert(`To run the Node.js test '${testFile}', please use the following command in your terminal:\n\nnode tests/${testFile}`);
+    }
+  </script>
+</body>
+</html>

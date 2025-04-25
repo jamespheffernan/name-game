@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Name Game - Fix Student Display Issue</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            border-bottom: 2px solid #4299e1;
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+        }
+        .fix-option {
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        h2 {
+            color: #2d3748;
+            margin-top: 0;
+        }
+        pre {
+            background-color: #f1f5f9;
+            border-radius: 6px;
+            padding: 15px;
+            overflow-x: auto;
+        }
+        code {
+            font-family: Menlo, Monaco, 'Courier New', monospace;
+        }
+        .btn {
+            background-color: #4299e1;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 16px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        .btn:hover {
+            background-color: #3182ce;
+        }
+        .note {
+            background-color: #fffde7;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .links {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Name Game - Fix Student Display Issue</h1>
+    
+    <p>This page provides different solutions to fix the student display issue in the Name Game application. Choose the option that works best for your situation.</p>
+    
+    <div class="note">
+        <strong>Note:</strong> All of these solutions address the issue where students are being loaded correctly but not displaying in the Student Management section.
+    </div>
+    
+    <div class="fix-option">
+        <h2>Option 1: Use the Standalone Student View</h2>
+        <p>A clean, standalone page to view all students in the database.</p>
+        <a href="/fix-student-view.html" class="btn">Open Student View</a>
+        <p>This page provides a direct way to view students without relying on the main application's styling or JavaScript.</p>
+    </div>
+    
+    <div class="fix-option">
+        <h2>Option 2: Add the Fix Script to index.html</h2>
+        <p>This script fixes the student display issue by fixing styles and providing diagnostic tools.</p>
+        <pre><code>&lt;!-- Add this line just before the closing &lt;/body&gt; tag in index.html --&gt;
+&lt;script src="/js/fix-students.js"&gt;&lt;/script&gt;</code></pre>
+        <p>The script will:</p>
+        <ul>
+            <li>Add a "Fix Student Display" button to the admin actions</li>
+            <li>Monitor for changes to the student list and apply fixes automatically</li>
+            <li>Show diagnostic information about the student list element</li>
+        </ul>
+        <a href="/js/fix-students.js" class="btn" download>Download Script</a>
+    </div>
+    
+    <div class="fix-option">
+        <h2>Option 3: Direct JavaScript Fix</h2>
+        <p>Add this code directly to your browser's console to fix the current view:</p>
+        <pre><code>// Run this in your browser console when on the Student Management tab
+function fixStudentDisplay() {
+  const studentList = document.getElementById('student-list');
+  if (!studentList) {
+    console.warn('Student list element not found');
+    return;
+  }
+  
+  // Apply fixes to force proper display
+  studentList.style.display = 'grid';
+  studentList.style.gridTemplateColumns = 'repeat(auto-fill, minmax(200px, 1fr))';
+  studentList.style.gap = '1.5rem';
+  studentList.style.opacity = '1';
+  studentList.style.visibility = 'visible';
+  studentList.style.overflow = 'visible';
+  
+  console.log('Student display fix applied');
+}
+
+// Run the fix
+fixStudentDisplay();</code></pre>
+    </div>
+    
+    <div class="fix-option">
+        <h2>Option 4: Permanent HTML Fix</h2>
+        <p>Edit your index.html file to update the student-list div:</p>
+        <pre><code>&lt;!-- Find and replace this line in index.html --&gt;
+&lt;div id="student-list" class="card-grid"&gt;&lt;/div&gt;
+
+&lt;!-- With this updated version --&gt;
+&lt;div id="student-list" class="card-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1.5rem;"&gt;&lt;/div&gt;</code></pre>
+        <p>This applies the necessary styles directly to the element to ensure proper display.</p>
+    </div>
+    
+    <div class="links">
+        <a href="/" class="btn">Back to Name Game</a>
+        <a href="/student-debug.html" class="btn">Student Debug Page</a>
+    </div>
+</body>
+</html>

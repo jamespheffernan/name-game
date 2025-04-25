@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Name Game Slideshow Test</title>
+  <link rel="stylesheet" href="../src/public/css/styles.css">
+  <style>
+    .test-controls {
+      background-color: #f0f4f8;
+      padding: 20px;
+      margin-bottom: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .test-section {
+      margin-bottom: 30px;
+      border: 1px solid #e2e8f0;
+      padding: 15px;
+      border-radius: 8px;
+    }
+    
+    .test-button {
+      margin: 5px;
+    }
+    
+    #results {
+      background-color: #f0f4f8;
+      padding: 15px;
+      border-radius: 8px;
+      max-height: 200px;
+      overflow-y: auto;
+      font-family: monospace;
+    }
+    
+    .log-entry {
+      margin-bottom: 5px;
+      padding: 5px;
+      background-color: #fff;
+      border-radius: 4px;
+    }
+    
+    .log-entry.error {
+      background-color: #fff5f5;
+      color: #e53e3e;
+    }
+    
+    .log-entry.success {
+      background-color: #f0fff4;
+      color: #38a169;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Name Game Slideshow Test</h1>
+  </header>
+  
+  <main>
+    <section class="test-controls">
+      <h2>Test Controls</h2>
+      
+      <div class="test-section">
+        <h3>Test Scenario 1: Basic Slideshow</h3>
+        <p>Tests the basic slideshow functionality with 3 wrong answers</p>
+        <button id="test-basic" class="test-button">Run Test</button>
+      </div>
+      
+      <div class="test-section">
+        <h3>Test Scenario 2: Override Answers</h3>
+        <p>Tests overriding answers (marking wrong answers as correct)</p>
+        <button id="test-override" class="test-button">Run Test</button>
+      </div>
+      
+      <div class="test-section">
+        <h3>Test Scenario 3: Multiple Overrides</h3>
+        <p>Tests multiple overrides to check if slideshow skips all overridden answers</p>
+        <button id="test-multiple-override" class="test-button">Run Test</button>
+      </div>
+      
+      <div class="test-section">
+        <h3>Test Scenario 4: Different Game Modes</h3>
+        <p>Tests all game modes in slideshow (standard, hard, reverse, shortAnswer)</p>
+        <button id="test-game-modes" class="test-button">Run Test</button>
+      </div>
+      
+      <div class="test-section">
+        <h3>Test Scenario 5: Edge Cases</h3>
+        <p>Tests edge cases (empty wrong answers, all overridden, etc.)</p>
+        <button id="test-edge-cases" class="test-button">Run Test</button>
+      </div>
+    </section>
+    
+    <section>
+      <h2>Test Output</h2>
+      <div id="results"></div>
+      <button id="clear-results">Clear Results</button>
+    </section>
+    
+    <!-- This is where the slideshow will be rendered -->
+    <div id="slideshow-container"></div>
+    
+    <!-- This is where the game results will be rendered -->
+    <div id="game-results" class="hidden">
+      <h3>Game Results</h3>
+      <div id="score-display"></div>
+      <div id="result-details"></div>
+      <button id="play-again-btn">Play Again</button>
+    </div>
+  </main>
+
+  <script>
+    // Mock data and helper functions for testing
+    const mockStudentData = [
+      {
+        id: '1',
+        firstName: 'John',
+        lastName: 'Smith',
+        fullName: 'John Smith',
+        preferredName: null,
+        imagePath: 'https://randomuser.me/api/portraits/men/1.jpg'
+      },
+      {
+        id: '2',
+        firstName: 'Emma',
+        lastName: 'Johnson',
+        fullName: 'Emma Johnson',
+        preferredName: 'Em',
+        imagePath: 'https://randomuser.me/api/portraits/women/1.jpg'
+      },
+      {
+        id: '3',
+        firstName: 'Michael',
+        lastName: 'Williams',
+        fullName: 'Michael Williams',
+        preferredName: 'Mike',
+        imagePath: 'https://randomuser.me/api/portraits/men/2.jpg'
+      },
+      {
+        id: '4',
+        firstName: 'Sophia',
+        lastName: 'Brown',
+        fullName: 'Sophia Brown',
+        preferredName: null,
+        imagePath: 'https://randomuser.me/api/portraits/women/2.jpg'
+      },
+      {
+        id: '5',
+        firstName: 'William',
+        lastName: 'Jones',
+        fullName: 'William Jones',
+        preferredName: 'Will',
+        imagePath: 'https://randomuser.me/api/portraits/men/3.jpg'
+      }
+    ];
+
+    // Test logger function
+    function log(message, type = 'info') {
+      const logEntry = document.createElement('div');
+      logEntry.className = `log-entry ${type}`;
+      logEntry.textContent = message;
+      
+      const results = document.getElementById('results');
+      results.appendChild(logEntry);
+      results.scrollTop = results.scrollHeight;
+    }
+
+    // Format name with preferred name (from the app.js file)
+    function formatNameWithPreferred(option) {
+      if (!option) return 'Unknown';
+      
+      // Get the base name to work with
+      let displayName = option.name || option.fullName || 
+                      (option.firstName && option.lastName ? `${option.firstName} ${option.lastName}` : 'Unknown');
+      
+      // CASE 1: Object has a preferredName property and firstName/lastName for formatting
+      if (option.preferredName && option.firstName && option.lastName) {
+        return `${option.firstName} <span class="preferred-name">'${option.preferredName}'</span> ${option.lastName}`;
+      }
+      
+      // CASE 2: Name is in the format "First 'Preferred' Last"
+      if (typeof displayName === 'string' && displayName.includes("'")) {
+        const firstQuote = displayName.indexOf("'");
+        const secondQuote = displayName.lastIndexOf("'");
+        
+        // Check if there are actually two quotes (preferred name exists)
+        if (firstQuote !== secondQuote) {
+          const preName = displayName.substring(0, firstQuote);
+          const preferredName = displayName.substring(firstQuote, secondQuote + 1);
+          const postName = displayName.substring(secondQuote + 1);
+          
+          return `${preName}<span class="preferred-name">${preferredName}</span>${postName}`;
+        }
+      }
+      
+      // CASE 3: No preferred name found, return the name as is
+      return displayName;
+    }
+
+    // The markAnswerAsCorrect function from app.js
+    function markAnswerAsCorrect(result, scoreResult, question) {
+      // Mark this result as correct in the original results
+      const resultIndex = scoreResult.results.findIndex(r => r.questionId === result.questionId);
+      if (resultIndex !== -1) {
+        // Update the result to be correct
+        scoreResult.results[resultIndex].correct = true;
+        
+        // Update the scoreResult's score and percentage
+        scoreResult.score += 1;
+        scoreResult.percentage = Math.round((scoreResult.score / scoreResult.totalQuestions) * 100);
+        
+        // If it was previously a "Don't Know", update the dontKnowCount
+        if (scoreResult.results[resultIndex].dontKnow) {
+          scoreResult.dontKnowCount -= 1;
+          scoreResult.dontKnowPercentage = Math.round((scoreResult.dontKnowCount / scoreResult.totalQuestions) * 100);
+        }
+        
+        // Update the performance data for this student
+        if (question.studentId && scoreResult.performanceData && scoreResult.performanceData[question.studentId]) {
+          const perfData = scoreResult.performanceData[question.studentId];
+          perfData.correctCount += 1;
+          perfData.incorrectCount -= 1;
+          perfData.successRate = (perfData.correctCount / perfData.attemptCount) * 100;
+        }
+        
+        // Mark as overridden to skip in the slideshow
+        result.overridden = true;
+      }
+    }
+
+    // The showWrongAnswerSlideshow function adapted from app.js
+    function showWrongAnswerSlideshow(wrongAnswers, scoreResult, currentGame) {
+      // Clear any existing slideshow
+      const existingSlideshow = document.querySelector('.slideshow-container');
+      if (existingSlideshow) {
+        existingSlideshow.remove();
+      }
+      
+      // Create slideshow container
+      const slideContainer = document.createElement('div');
+      slideContainer.className = 'slideshow-container';
+      slideContainer.innerHTML = `
+        <div class="slideshow-header">
+          <h2>Review Mistakes</h2>
+          <p>Let's review each wrong answer to help you learn</p>
+          <div class="slideshow-progress">
+            <div class="slideshow-progress-text">1/${wrongAnswers.length}</div>
+            <div class="slideshow-progress-bar">
+              <div class="slideshow-progress-fill" style="width: ${100 / wrongAnswers.length}%"></div>
+            </div>
+          </div>
+        </div>
+        <div class="slideshow-content"></div>
+        <div class="slideshow-controls">
+          <button class="slideshow-next-btn">Next</button>
+          <button class="slideshow-skip-btn">Skip to Results</button>
+        </div>
+      `;
+      
+      // Add slideshow to the container
+      document.getElementById('slideshow-container').appendChild(slideContainer);
+      
+      const slideContent = slideContainer.querySelector('.slideshow-content');
+      const progressText = slideContainer.querySelector('.slideshow-progress-text');
+      const progressFill = slideContainer.querySelector('.slideshow-progress-fill');
+      const nextButton = slideContainer.querySelector('.slideshow-next-btn');
+      const skipButton = slideContainer.querySelector('.slideshow-skip-btn');
+      
+      let currentSlideIndex = 0;
+      
+      // Show the first slide
+      showSlide(currentSlideIndex);
+      
+      // Keep track of the original total wrong answers count
+      const totalWrongAnswers = wrongAnswers.length;
+      let remainingAnswersToShow = totalWrongAnswers;
+      
+      // Event listener for Next button
+      nextButton.addEventListener('click', () => {
+        log(`Next button clicked. Current index: ${currentSlideIndex}`, 'info');
+        currentSlideIndex++;
+        remainingAnswersToShow--; // Decrement counter
+        
+        // Check if we've gone through all wrong answers
+        if (currentSlideIndex >= wrongAnswers.length || remainingAnswersToShow <= 0) {
+          // End of slideshow, show full results
+          log('End of slideshow reached. Showing full results.', 'success');
+          slideContainer.remove();
+          showFullResults([...wrongAnswers, ...scoreResult.results.filter(r => r.correct)], scoreResult);
+        } else {
+          showSlide(currentSlideIndex);
+        }
+      });
+      
+      // Event listener for Skip button
+      skipButton.addEventListener('click', () => {
+        log('Skip button clicked. Skipping to full results.', 'info');
+        slideContainer.remove();
+        showFullResults([...wrongAnswers, ...scoreResult.results.filter(r => r.correct)], scoreResult);
+      });
+      
+      // Function to show a specific slide
+      function showSlide(index) {
+        log(`showSlide called with index: ${index}`, 'info');
+        
+        // Skip overridden answers or undefined elements (if some were deleted)
+        while (index < wrongAnswers.length && 
+               (wrongAnswers[index] === undefined || 
+                wrongAnswers[index].overridden)) {
+          log(`Skipping overridden or undefined answer at index: ${index}`, 'info');
+          index++;
+          currentSlideIndex = index; // Update the current slide index
+        }
+        
+        // Check if we've reached the end
+        if (index >= wrongAnswers.length) {
+          // End of slideshow, show full results
+          log('End of slideshow reached after skipping overridden answers. Showing full results.', 'success');
+          slideContainer.remove();
+          showFullResults([...wrongAnswers, ...scoreResult.results.filter(r => r.correct)], scoreResult);
+          return;
+        }
+        
+        const result = wrongAnswers[index];
+        const question = currentGame.questions.find(q => q.id === result.questionId);
+        
+        if (!question) {
+          log(`Error: Question not found for result ${JSON.stringify(result)}`, 'error');
+          return;
+        }
+        
+        // Update progress indicators
+        progressText.textContent = `${index + 1}/${wrongAnswers.length}`;
+        progressFill.style.width = `${((index + 1) / wrongAnswers.length) * 100}%`;
+        
+        // Update next button text for last slide
+        if (index === wrongAnswers.length - 1) {
+          nextButton.textContent = 'See Full Results';
+        }
+        
+        slideContent.innerHTML = '';
+        
+        // Create the slide content based on question type
+        if (question.type === 'shortAnswer') {
+          // Short answer question
+          const correctAnswers = question.acceptableAnswers.map(a => a[0].toUpperCase() + a.slice(1)); // Capitalize
+          const userAnswer = result.userTextAnswer || "No answer";
+          
+          // First show just the image prominently
+          slideContent.innerHTML = `
+            <div class="slide-phase phase-1">
+              <img src="${question.studentImage}" alt="Student" class="slide-image">
+              <p class="slide-instruction">This student is...</p>
+            </div>
+          `;
+          
+          // Add reveal button
+          const revealBtn = document.createElement('button');
+          revealBtn.className = 'slide-reveal-btn';
+          revealBtn.textContent = 'Reveal Name';
+          slideContent.querySelector('.phase-1').appendChild(revealBtn);
+          
+          // Event listener for reveal button
+          revealBtn.addEventListener('click', () => {
+            log('Reveal button clicked for shortAnswer question', 'info');
+            // Replace with phase 2 content (showing the correct name)
+            slideContent.innerHTML = `
+              <div class="slide-phase phase-2">
+                <img src="${question.studentImage}" alt="Student" class="slide-image">
+                <div class="slide-answer">
+                  <h3 class="correct-name">${question.firstName}${question.preferredName ? ` <span class="preferred-name">'${question.preferredName}'</span> ` : ' '}${question.lastName}</h3>
+                  <p class="slide-note">Acceptable answers: ${correctAnswers.join(' or ')}</p>
+                  <p class="slide-note">You typed: <span class="wrong-name">${userAnswer}</span></p>
+                  <button class="override-result-btn correct-btn">I got this right</button>
+                  <button class="override-result-btn continue-btn">Continue</button>
+                </div>
+              </div>
+            `;
+            
+            // Add event listeners for the override buttons
+            const correctBtn = slideContent.querySelector('.override-result-btn.correct-btn');
+            const continueBtn = slideContent.querySelector('.override-result-btn.continue-btn');
+            
+            if (correctBtn) {
+              correctBtn.addEventListener('click', () => {
+                log('User marked shortAnswer as correct', 'success');
+                // Use the helper function to mark this answer as correct
+                markAnswerAsCorrect(result, scoreResult, question);
+                
+                // Proceed to next slide
+                nextButton.click();
+              });
+            }
+            
+            if (continueBtn) {
+              continueBtn.addEventListener('click', () => {
+                log('User continued without marking shortAnswer as correct', 'info');
+                // Just proceed to next slide
+                nextButton.click();
+              });
+            }
+          });
+        }
+        else if (question.type === 'standard' || question.type === 'hard') {
+          // Photo → Name question
+          const correctOption = question.options.find(opt => opt.id === question.correctOptionId);
+          const selectedOption = result.dontKnow ? 
+            { name: "Don't Know" } : 
+            question.options.find(opt => opt.id === result.selectedOptionId);
+            
+          // Format names with preferred styling
+          let correctName = formatNameWithPreferred(correctOption);
+          
+          // First show just the image prominently
+          slideContent.innerHTML = `
+            <div class="slide-phase phase-1">
+              <img src="${question.studentImage}" alt="Student" class="slide-image">
+              <p class="slide-instruction">This student is...</p>
+            </div>
+          `;
+          
+          // Add reveal button
+          const revealBtn = document.createElement('button');
+          revealBtn.className = 'slide-reveal-btn';
+          revealBtn.textContent = 'Reveal Name';
+          slideContent.querySelector('.phase-1').appendChild(revealBtn);
+          
+          // Event listener for reveal button
+          revealBtn.addEventListener('click', () => {
+            log(`Reveal button clicked for ${question.type} question`, 'info');
+            // Replace with phase 2 content (showing the correct name)
+            slideContent.innerHTML = `
+              <div class="slide-phase phase-2">
+                <img src="${question.studentImage}" alt="Student" class="slide-image">
+                <div class="slide-answer">
+                  <h3 class="correct-name">${correctName}</h3>
+                  ${result.dontKnow ? 
+                    `<p class="slide-note">You answered: <span class="dont-know-response">Don't Know</span></p>` : 
+                    `<p class="slide-note">You answered: <span class="wrong-name">${selectedOption.name}</span></p>`
+                  }
+                  <button class="override-result-btn correct-btn">I got this right</button>
+                  <button class="override-result-btn continue-btn">Continue</button>
+                </div>
+              </div>
+            `;
+            
+            // Add event listeners for the override buttons
+            const correctBtn = slideContent.querySelector('.override-result-btn.correct-btn');
+            const continueBtn = slideContent.querySelector('.override-result-btn.continue-btn');
+            
+            if (correctBtn) {
+              correctBtn.addEventListener('click', () => {
+                log(`User marked ${question.type} answer as correct`, 'success');
+                // Use the helper function to mark this answer as correct
+                markAnswerAsCorrect(result, scoreResult, question);
+                
+                // Proceed to next slide
+                nextButton.click();
+              });
+            }
+            
+            if (continueBtn) {
+              continueBtn.addEventListener('click', () => {
+                log(`User continued without marking ${question.type} answer as correct`, 'info');
+                // Just proceed to next slide
+                nextButton.click();
+              });
+            }
+          });
+        } else {
+          // Reverse mode (Name → Photo)
+          const correctOption = question.options.find(opt => opt.id === question.correctOptionId);
+          const selectedOption = result.dontKnow ? 
+            { imagePath: "https://via.placeholder.com/150?text=Don't+Know" } : 
+            question.options.find(opt => opt.id === result.selectedOptionId);
+          
+          // Format the student name with preferred name styling
+          const studentObj = {
+            fullName: question.studentName,
+            firstName: question.firstName,
+            lastName: question.lastName,
+            preferredName: question.preferredName
+          };
+          
+          const formattedName = formatNameWithPreferred(studentObj);
+          
+          // First show just the name prominently
+          slideContent.innerHTML = `
+            <div class="slide-phase phase-1">
+              <h2 class="slide-name">${formattedName}</h2>
+              <p class="slide-instruction">Looks like...</p>
+            </div>
+          `;
+          
+          // Add reveal button
+          const revealBtn = document.createElement('button');
+          revealBtn.className = 'slide-reveal-btn';
+          revealBtn.textContent = 'Reveal Photo';
+          slideContent.querySelector('.phase-1').appendChild(revealBtn);
+          
+          // Event listener for reveal button
+          revealBtn.addEventListener('click', () => {
+            log('Reveal button clicked for reverse question', 'info');
+            // Replace with phase 2 content (showing the correct photo)
+            slideContent.innerHTML = `
+              <div class="slide-phase phase-2">
+                <h2 class="slide-name">${formattedName}</h2>
+                <div class="slide-answer">
+                  <img src="${correctOption.imagePath}" alt="Correct student" class="slide-image">
+                  ${result.dontKnow ? 
+                    `<p class="slide-note">You answered: <span class="dont-know-response">Don't Know</span></p>` : 
+                    `<p class="slide-note">You selected a different photo</p>`
+                  }
+                  <button class="override-result-btn correct-btn">I got this right</button>
+                  <button class="override-result-btn continue-btn">Continue</button>
+                </div>
+              </div>
+            `;
+            
+            // Add event listeners for the override buttons
+            const correctBtn = slideContent.querySelector('.override-result-btn.correct-btn');
+            const continueBtn = slideContent.querySelector('.override-result-btn.continue-btn');
+            
+            if (correctBtn) {
+              correctBtn.addEventListener('click', () => {
+                log('User marked reverse answer as correct', 'success');
+                // Use the helper function to mark this answer as correct
+                markAnswerAsCorrect(result, scoreResult, question);
+                
+                // Proceed to next slide
+                nextButton.click();
+              });
+            }
+            
+            if (continueBtn) {
+              continueBtn.addEventListener('click', () => {
+                log('User continued without marking reverse answer as correct', 'info');
+                // Just proceed to next slide
+                nextButton.click();
+              });
+            }
+          });
+        }
+      }
+    }
+
+    // Stub for showing full results - for our test we just log and clean up UI
+    function showFullResults(sortedResults, scoreResult) {
+      log(`showFullResults called with ${sortedResults.length} results and score: ${scoreResult.score}/${scoreResult.totalQuestions}`, 'success');
+      
+      // For testing purposes, we'll just show a simple score
+      document.getElementById('game-results').classList.remove('hidden');
+      document.getElementById('score-display').textContent = `Score: ${scoreResult.score}/${scoreResult.totalQuestions} (${scoreResult.percentage}%)`;
+      
+      // Reset test state
+      document.getElementById('play-again-btn').addEventListener('click', () => {
+        document.getElementById('game-results').classList.add('hidden');
+      });
+    }
+
+    // Test Scenario 1: Basic Slideshow
+    document.getElementById('test-basic').addEventListener('click', () => {
+      log('Running Test Scenario 1: Basic Slideshow', 'info');
+      
+      // Create mock game data
+      const mockGame = {
+        questions: [
+          {
+            id: 'q1',
+            type: 'standard',
+            studentId: '1',
+            studentImage: mockStudentData[0].imagePath,
+            correctOptionId: '1',
+            studentName: mockStudentData[0].fullName,
+            firstName: mockStudentData[0].firstName,
+            lastName: mockStudentData[0].lastName,
+            preferredName: mockStudentData[0].preferredName,
+            options: mockStudentData
+          },
+          {
+            id: 'q2',
+            type: 'standard',
+            studentId: '2',
+            studentImage: mockStudentData[1].imagePath,
+            correctOptionId: '2',
+            studentName: mockStudentData[1].fullName,
+            firstName: mockStudentData[1].firstName,
+            lastName: mockStudentData[1].lastName,
+            preferredName: mockStudentData[1].preferredName,
+            options: mockStudentData
+          },
+          {
+            id: 'q3',
+            type: 'standard',
+            studentId: '3',
+            studentImage: mockStudentData[2].imagePath,
+            correctOptionId: '3', 
+            studentName: mockStudentData[2].fullName,
+            firstName: mockStudentData[2].firstName,
+            lastName: mockStudentData[2].lastName,
+            preferredName: mockStudentData[2].preferredName,
+            options: mockStudentData
+          }
+        ]
+      };
+      
+      // Create wrong answers
+      const wrongAnswers = [
+        {
+          questionId: 'q1',
+          selectedOptionId: '4', // Wrong answer
+          correct: false
+        },
+        {
+          questionId: 'q2',
+          selectedOptionId: '5', // Wrong answer
+          correct: false
+        },
+        {
+          questionId: 'q3',
+          selectedOptionId: 'dont-know', // Don't know
+          dontKnow: true,
+          correct: false
+        }
+      ];
+      
+      // Create score result
+      const scoreResult = {
+        score: 0,
+        totalQuestions: 3,
+        percentage: 0,
+        dontKnowCount: 1,
+        dontKnowPercentage: 33,
+        results: [...wrongAnswers],
+        performanceData: {
+          '1': { attemptCount: 3, correctCount: 1, incorrectCount: 2, successRate: 33.33 },
+          '2': { attemptCount: 2, correctCount: 1, incorrectCount: 1, successRate: 50 },
+          '3': { attemptCount: 1, correctCount: 0, incorrectCount: 1, successRate: 0 }
+        }
+      };
+      
+      // Reset UI
+      document.getElementById('game-results').classList.add('hidden');
+      const existingSlideshow = document.querySelector('.slideshow-container');
+      if (existingSlideshow) {
+        existingSlideshow.remove();
+      }
+      
+      // Run the slideshow
+      showWrongAnswerSlideshow(wrongAnswers, scoreResult, mockGame);
+    });
+
+    // Test Scenario 2: Override Answers
+    document.getElementById('test-override').addEventListener('click', () => {
+      log('Running Test Scenario 2: Override Answers', 'info');
+      
+      // Create mock game data
+      const mockGame = {
+        questions: [
+          {
+            id: 'q1',
+            type: 'standard',
+            studentId: '1',
+            studentImage: mockStudentData[0].imagePath,
+            correctOptionId: '1',
+            studentName: mockStudentData[0].fullName,
+            firstName: mockStudentData[0].firstName,
+            lastName: mockStudentData[0].lastName,
+            preferredName: mockStudentData[0].preferredName,
+            options: mockStudentData
+          },
+          {
+            id: 'q2',
+            type: 'standard',
+            studentId: '2',
+            studentImage: mockStudentData[1].imagePath,
+            correctOptionId: '2',
+            studentName: mockStudentData[1].fullName,
+            firstName: mockStudentData[1].firstName,
+            lastName: mockStudentData[1].lastName,
+            preferredName: mockStudentData[1].preferredName,
+            options: mockStudentData
+          }
+        ]
+      };
+      
+      // Create wrong answers
+      const wrongAnswers = [
+        {
+          questionId: 'q1',
+          selectedOptionId: '4', // Wrong answer
+          correct: false
+        },
+        {
+          questionId: 'q2',
+          selectedOptionId: '5', // Wrong answer
+          correct: false
+        }
+      ];
+      
+      // Create score result
+      const scoreResult = {
+        score: 0,
+        totalQuestions: 2,
+        percentage: 0,
+        results: [...wrongAnswers],
+        performanceData: {
+          '1': { attemptCount: 3, correctCount: 1, incorrectCount: 2, successRate: 33.33 },
+          '2': { attemptCount: 2, correctCount: 1, incorrectCount: 1, successRate: 50 }
+        }
+      };
+      
+      // Reset UI
+      document.getElementById('game-results').classList.add('hidden');
+      const existingSlideshow = document.querySelector('.slideshow-container');
+      if (existingSlideshow) {
+        existingSlideshow.remove();
+      }
+      
+      // Run the slideshow
+      showWrongAnswerSlideshow(wrongAnswers, scoreResult, mockGame);
+      
+      // Instruct user on how to test overriding
+      log('Please use the "I got this right" button on the first question to test overriding', 'info');
+    });
+
+    // Test Scenario 3: Multiple Overrides
+    document.getElementById('test-multiple-override').addEventListener('click', () => {
+      log('Running Test Scenario 3: Multiple Overrides', 'info');
+      
+      // Create mock game data
+      const mockGame = {
+        questions: [
+          {
+            id: 'q1',
+            type: 'standard',
+            studentId: '1',
+            studentImage: mockStudentData[0].imagePath,
+            correctOptionId: '1',
+            studentName: mockStudentData[0].fullName,
+            firstName: mockStudentData[0].firstName,
+            lastName: mockStudentData[0].lastName,
+            preferredName: mockStudentData[0].preferredName,
+            options: mockStudentData
+          },
+          {
+            id: 'q2',
+            type: 'standard', 
+            studentId: '2',
+            studentImage: mockStudentData[1].imagePath,
+            correctOptionId: '2',
+            studentName: mockStudentData[1].fullName,
+            firstName: mockStudentData[1].firstName,
+            lastName: mockStudentData[1].lastName,
+            preferredName: mockStudentData[1].preferredName,
+            options: mockStudentData
+          },
+          {
+            id: 'q3',
+            type: 'standard',
+            studentId: '3',
+            studentImage: mockStudentData[2].imagePath,
+            correctOptionId: '3',
+            studentName: mockStudentData[2].fullName,
+            firstName: mockStudentData[2].firstName,
+            lastName: mockStudentData[2].lastName,
+            preferredName: mockStudentData[2].preferredName,
+            options: mockStudentData
+          }
+        ]
+      };
+      
+      // Create wrong answers
+      const wrongAnswers = [
+        {
+          questionId: 'q1',
+          selectedOptionId: '4', // Wrong answer
+          correct: false
+        },
+        {
+          questionId: 'q2',
+          selectedOptionId: '5', // Wrong answer
+          correct: false
+        },
+        {
+          questionId: 'q3',
+          selectedOptionId: '1', // Wrong answer
+          correct: false
+        }
+      ];
+      
+      // Create score result
+      const scoreResult = {
+        score: 0,
+        totalQuestions: 3,
+        percentage: 0,
+        results: [...wrongAnswers],
+        performanceData: {
+          '1': { attemptCount: 3, correctCount: 1, incorrectCount: 2, successRate: 33.33 },
+          '2': { attemptCount: 2, correctCount: 1, incorrectCount: 1, successRate: 50 },
+          '3': { attemptCount: 1, correctCount: 0, incorrectCount: 1, successRate: 0 }
+        }
+      };
+      
+      // Reset UI
+      document.getElementById('game-results').classList.add('hidden');
+      const existingSlideshow = document.querySelector('.slideshow-container');
+      if (existingSlideshow) {
+        existingSlideshow.remove();
+      }
+      
+      // Run the slideshow
+      showWrongAnswerSlideshow(wrongAnswers, scoreResult, mockGame);
+      
+      // Instruct user on how to test overriding
+      log('Please use the "I got this right" button on multiple questions to test overriding', 'info');
+    });
+
+    // Test Scenario 4: Different Game Modes
+    document.getElementById('test-game-modes').addEventListener('click', () => {
+      log('Running Test Scenario 4: Different Game Modes', 'info');
+      
+      // Create mock game data
+      const mockGame = {
+        questions: [
+          {
+            id: 'q1',
+            type: 'standard',
+            studentId: '1',
+            studentImage: mockStudentData[0].imagePath,
+            correctOptionId: '1',
+            studentName: mockStudentData[0].fullName,
+            firstName: mockStudentData[0].firstName,
+            lastName: mockStudentData[0].lastName,
+            preferredName: mockStudentData[0].preferredName,
+            options: mockStudentData
+          },
+          {
+            id: 'q2',
+            type: 'hard',
+            studentId: '2',
+            studentImage: mockStudentData[1].imagePath,
+            correctOptionId: '2',
+            studentName: mockStudentData[1].fullName,
+            firstName: mockStudentData[1].firstName,
+            lastName: mockStudentData[1].lastName,
+            preferredName: mockStudentData[1].preferredName,
+            options: mockStudentData
+          },
+          {
+            id: 'q3',
+            type: 'reverse',
+            studentId: '3',
+            correctOptionId: '3',
+            studentName: mockStudentData[2].fullName,
+            firstName: mockStudentData[2].firstName,
+            lastName: mockStudentData[2].lastName,
+            preferredName: mockStudentData[2].preferredName,
+            options: mockStudentData
+          },
+          {
+            id: 'q4',
+            type: 'shortAnswer',
+            studentId: '4',
+            studentImage: mockStudentData[3].imagePath,
+            firstName: mockStudentData[3].firstName,
+            lastName: mockStudentData[3].lastName,
+            preferredName: mockStudentData[3].preferredName,
+            acceptableAnswers: ['Sophia']
+          }
+        ]
+      };
+      
+      // Create wrong answers
+      const wrongAnswers = [
+        {
+          questionId: 'q1',
+          selectedOptionId: '4', // Wrong answer for standard
+          correct: false
+        },
+        {
+          questionId: 'q2',
+          selectedOptionId: '5', // Wrong answer for hard
+          correct: false
+        },
+        {
+          questionId: 'q3',
+          selectedOptionId: '1', // Wrong answer for reverse
+          correct: false
+        },
+        {
+          questionId: 'q4',
+          userTextAnswer: 'Sam', // Wrong answer for short answer
+          correct: false
+        }
+      ];
+      
+      // Create score result
+      const scoreResult = {
+        score: 0,
+        totalQuestions: 4,
+        percentage: 0,
+        results: [...wrongAnswers],
+        performanceData: {
+          '1': { attemptCount: 3, correctCount: 1, incorrectCount: 2, successRate: 33.33 },
+          '2': { attemptCount: 2, correctCount: 1, incorrectCount: 1, successRate: 50 },
+          '3': { attemptCount: 1, correctCount: 0, incorrectCount: 1, successRate: 0 },
+          '4': { attemptCount: 1, correctCount: 0, incorrectCount: 1, successRate: 0 }
+        }
+      };
+      
+      // Reset UI
+      document.getElementById('game-results').classList.add('hidden');
+      const existingSlideshow = document.querySelector('.slideshow-container');
+      if (existingSlideshow) {
+        existingSlideshow.remove();
+      }
+      
+      // Run the slideshow
+      showWrongAnswerSlideshow(wrongAnswers, scoreResult, mockGame);
+    });
+
+    // Test Scenario 5: Edge Cases
+    document.getElementById('test-edge-cases').addEventListener('click', () => {
+      log('Running Test Scenario 5: Edge Cases', 'info');
+      
+      // Create mock game data
+      const mockGame = {
+        questions: [
+          {
+            id: 'q1',
+            type: 'standard',
+            studentId: '1',
+            studentImage: mockStudentData[0].imagePath,
+            correctOptionId: '1',
+            studentName: mockStudentData[0].fullName,
+            firstName: mockStudentData[0].firstName,
+            lastName: mockStudentData[0].lastName,
+            preferredName: mockStudentData[0].preferredName,
+            options: mockStudentData
+          }
+        ]
+      };
+      
+      // Test with empty wrong answers
+      const runEmptyWrongAnswers = () => {
+        log('Testing with empty wrong answers array', 'info');
+        
+        const wrongAnswers = [];
+        const scoreResult = {
+          score: 1,
+          totalQuestions: 1,
+          percentage: 100,
+          results: [],
+          performanceData: {}
+        };
+        
+        // Reset UI
+        document.getElementById('game-results').classList.add('hidden');
+        const existingSlideshow = document.querySelector('.slideshow-container');
+        if (existingSlideshow) {
+          existingSlideshow.remove();
+        }
+        
+        // This should immediately show full results
+        showWrongAnswerSlideshow(wrongAnswers, scoreResult, mockGame);
+      };
+      
+      // Test with all overridden answers
+      const runAllOverridden = () => {
+        log('Testing with all answers already overridden', 'info');
+        
+        const wrongAnswers = [
+          {
+            questionId: 'q1',
+            selectedOptionId: '4',
+            correct: false,
+            overridden: true
+          }
+        ];
+        
+        const scoreResult = {
+          score: 1,
+          totalQuestions: 1,
+          percentage: 100,
+          results: wrongAnswers,
+          performanceData: {}
+        };
+        
+        // Reset UI
+        document.getElementById('game-results').classList.add('hidden');
+        const existingSlideshow = document.querySelector('.slideshow-container');
+        if (existingSlideshow) {
+          existingSlideshow.remove();
+        }
+        
+        // This should immediately show full results because all answers are overridden
+        showWrongAnswerSlideshow(wrongAnswers, scoreResult, mockGame);
+      };
+      
+      // Run the tests in sequence with a delay
+      runEmptyWrongAnswers();
+      setTimeout(runAllOverridden, 3000);
+    });
+
+    // Clear results button
+    document.getElementById('clear-results').addEventListener('click', () => {
+      document.getElementById('results').innerHTML = '';
+    });
+
+    // Initialize with instructions
+    log('Welcome to the Name Game Slideshow Test', 'info');
+    log('Select a test scenario to begin', 'info');
+  </script>
+</body>
+</html>
