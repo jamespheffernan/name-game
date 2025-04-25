@@ -351,6 +351,37 @@ async function generateGame(req, res) {
           message: error.message
         });
       }
+    } else if (mode === 'educationTrivia') {
+      // For education trivia, we need students with structured education data
+      // Filter to students with education data
+      const studentsWithEducation = studentsWithImages.filter(s => 
+        s.educationParsed && Array.isArray(s.educationParsed) && s.educationParsed.length > 0);
+      
+      // Check if we have enough students with education data
+      if (studentsWithEducation.length < 8) {
+        return res.status(400).json({ 
+          error: 'Not enough students for education trivia mode', 
+          message: 'Education trivia mode requires at least 8 students with structured education data.'
+        });
+      }
+      
+      try {
+        questions = gameService.generateEducationTriviaRound(studentsWithEducation, questionCount);
+        
+        // Check if we generated enough questions
+        if (questions.length < 1) {
+          return res.status(400).json({ 
+            error: 'Could not generate education trivia questions', 
+            message: 'Not enough educational connections found between students. Try a different mode or add more education data.'
+          });
+        }
+      } catch (error) {
+        console.error('Error generating education trivia:', error);
+        return res.status(500).json({ 
+          error: 'Failed to generate education trivia', 
+          message: error.message
+        });
+      }
     } else {
       return res.status(400).json({ error: 'Invalid game mode' });
     }

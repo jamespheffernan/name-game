@@ -3,8 +3,9 @@
  * Handles game logic for the Name Game application
  */
 
-// Import the connection service for trivia mode
+// Import the connection services for trivia modes
 const connectionService = require('./connectionService');
+const educationConnectionService = require('./education-connections');
 
 /**
  * Calculate tag similarity between two students
@@ -648,12 +649,24 @@ function generateConnectionTriviaRound(students, questionCount = 5) {
   return connectionService.generateConnectionTriviaRound(students, questionCount);
 }
 
+/**
+ * Generate a round of education trivia questions about student connections
+ * @param {Array} students - Array of student objects
+ * @param {number} questionCount - Number of questions to generate
+ * @returns {Array} Array of trivia question objects
+ */
+function generateEducationTriviaRound(students, questionCount = 5) {
+  // Delegate to the education connection service
+  return educationConnectionService.generateEducationTriviaRound(students, questionCount);
+}
+
 module.exports = {
   generateStandardGameRound,
   generateReverseGameRound,
   generateHardGameRound,
   generateShortAnswerGameRound,
   generateConnectionTriviaRound,
+  generateEducationTriviaRound,  // Export the new education trivia function
   scoreGame,
   prioritizeDifficultStudents,
   // Export utility functions for testing and configuration
