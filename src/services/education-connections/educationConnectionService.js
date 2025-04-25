@@ -260,33 +260,69 @@ function generateWrongOptions(student1, student2, connection, allStudents) {
     }
   }
   
-  // Option 2: Use real connections with other students
-  const otherStudents = allStudents
-    .filter(s => s.id !== student1.id && s.id !== student2.id)
-    .filter(s => s.educationParsed && Array.isArray(s.educationParsed) && s.educationParsed.length > 0);
+  // Option 2: Generate alternative wrong connections using the same students
+  // This approach avoids mentioning other students in wrong answers
   
-  for (let i = 0; wrongOptions.length < 3 && i < otherStudents.length; i++) {
-    const otherStudent = otherStudents[i];
+  // Get all possible connection types that aren't the correct one
+  const otherConnectionTypes = Object.values(EDUCATION_CONNECTION_TYPES)
+    .filter(ct => ct.type !== connection.type);
+  
+  // For each wrong connection type, try to create a plausible but incorrect connection
+  for (const wrongType of otherConnectionTypes) {
+    if (wrongOptions.length >= 3) break;
     
-    // Try to find a connection with student1
-    const connection1 = findEducationConnection(student1, otherStudent);
-    if (connection1 && !usedDescriptions.has(connection1.description)) {
-      wrongOptions.push({
-        id: `option_wrong_${wrongOptions.length + 1}`,
-        text: connection1.description
-      });
-      usedDescriptions.add(connection1.description);
-      continue;
+    // Try to create a plausible incorrect connection
+    let wrongText = '';
+    
+    switch (wrongType.type) {
+      case 'same_university':
+        // Use a plausible but incorrect university
+        const universities = ['Harvard University', 'Stanford University', 'MIT', 'Oxford University', 
+                           'Cambridge University', 'Yale University', 'Princeton University'];
+        const wrongUniversity = universities[Math.floor(Math.random() * universities.length)];
+        wrongText = `${student1.fullName} and ${student2.fullName} both attended ${wrongUniversity}`;
+        break;
+        
+      case 'same_degree_type':
+        // Use a plausible but incorrect degree type
+        const degreeTypes = ['Bachelor', 'Master', 'Doctorate', 'MBA', 'PhD'];
+        const correctDegreeType = connection.match; // Don't use the correct one
+        const availableDegreeTypes = degreeTypes.filter(dt => 
+          dt.toLowerCase() !== (correctDegreeType ? correctDegreeType.toLowerCase() : ''));
+        const wrongDegreeType = availableDegreeTypes[Math.floor(Math.random() * availableDegreeTypes.length)];
+        wrongText = `${student1.fullName} and ${student2.fullName} both have ${wrongDegreeType} degrees`;
+        break;
+        
+      case 'same_subject':
+        // Use a plausible but incorrect subject
+        const subjects = ['Computer Science', 'Economics', 'Business Administration', 'Finance', 
+                        'Engineering', 'Marketing', 'Physics', 'Mathematics'];
+        const correctSubject = connection.match; // Don't use the correct one
+        const availableSubjects = subjects.filter(s => 
+          !correctSubject || !s.toLowerCase().includes(correctSubject.toLowerCase()));
+        const wrongSubject = availableSubjects[Math.floor(Math.random() * availableSubjects.length)];
+        wrongText = `${student1.fullName} and ${student2.fullName} both studied ${wrongSubject}`;
+        break;
+        
+      case 'same_education_location':
+        // Use a plausible but incorrect location
+        const locations = ['United States', 'United Kingdom', 'Japan', 'Germany', 'France', 
+                         'Singapore', 'Australia', 'Canada', 'China'];
+        const correctLocation = connection.match; // Don't use the correct one
+        const availableLocations = locations.filter(loc => 
+          !correctLocation || !loc.toLowerCase().includes(correctLocation.toLowerCase()));
+        const wrongLocation = availableLocations[Math.floor(Math.random() * availableLocations.length)];
+        wrongText = `${student1.fullName} and ${student2.fullName} both studied in ${wrongLocation}`;
+        break;
     }
     
-    // Try with student2
-    const connection2 = findEducationConnection(student2, otherStudent);
-    if (connection2 && !usedDescriptions.has(connection2.description)) {
+    // Add the wrong option if it's not a duplicate
+    if (wrongText && !usedDescriptions.has(wrongText)) {
       wrongOptions.push({
         id: `option_wrong_${wrongOptions.length + 1}`,
-        text: connection2.description
+        text: wrongText
       });
-      usedDescriptions.add(connection2.description);
+      usedDescriptions.add(wrongText);
     }
   }
   
