@@ -1699,15 +1699,15 @@ document.addEventListener('DOMContentLoaded', function() {
     // Check for special modes and apply appropriate classes
     if (question.type === 'hard') {
       optionsDisplay.className = 'hard-mode-grid';
-    } else if (question.type === 'connectionTrivia') {
+    } else if (question.type === 'connectionTrivia' || question.type === 'educationTrivia') {
       optionsDisplay.className = 'connection-options';
     } else {
       optionsDisplay.className = '';
     }
     
     // Display the question prompt based on game type
-    if (question.type === 'connectionTrivia') {
-      // Connection Trivia mode: Show two students and ask about their connection
+    if (question.type === 'connectionTrivia' || question.type === 'educationTrivia') {
+      // Connection/Education Trivia mode: Show two students and ask about their connection
       displayConnectionTrivia(question, index);
     } else if (question.type === 'shortAnswer') {
       // Short answer mode: Show image, ask for name with text input
