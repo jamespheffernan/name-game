@@ -383,7 +383,11 @@ async function generateGame(req, res) {
         });
       }
     } else {
-      return res.status(400).json({ error: 'Invalid game mode' });
+      console.error(`Invalid game mode: ${mode}. Valid modes are: standard, reverse, hard, shortAnswer, connectionTrivia, educationTrivia`);
+      return res.status(400).json({ 
+        error: 'Invalid game mode',
+        message: `The game mode "${mode}" is not supported. Valid modes are: standard, reverse, hard, shortAnswer, connectionTrivia, educationTrivia`
+      });
     }
     
     // Generate a game session

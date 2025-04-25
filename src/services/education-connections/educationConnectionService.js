@@ -372,6 +372,15 @@ function createEducationTriviaQuestion(student1, student2, connection, allStuden
   const options = [correctOption, ...wrongOptions];
   const shuffledOptions = options.sort(() => Math.random() - 0.5);
   
+  // Log what we're generating to help with debugging
+  console.log('Creating education trivia question:', {
+    student1: student1.fullName,
+    student2: student2.fullName,
+    connectionType: connection.type,
+    correctDescription: connection.description,
+    optionsCount: options.length
+  });
+  
   return {
     id: `education_trivia_${Date.now()}`,
     type: 'educationTrivia',
@@ -406,6 +415,8 @@ function generateEducationTrivia(students) {
   const studentsWithEducation = students.filter(s => 
     s.educationParsed && Array.isArray(s.educationParsed) && s.educationParsed.length > 0);
   
+  console.log(`generateEducationTrivia: ${studentsWithEducation.length} students with education data out of ${students.length} total`);
+  
   if (studentsWithEducation.length < 8) {
     throw new Error('Need at least 8 students with education data to generate education trivia');
   }
@@ -414,19 +425,36 @@ function generateEducationTrivia(students) {
   const shuffledStudents = [...studentsWithEducation].sort(() => Math.random() - 0.5);
   
   // Try to find a pair of students with an education connection
-  for (let i = 0; i < shuffledStudents.length - 1; i++) {
-    for (let j = i + 1; j < shuffledStudents.length; j++) {
+  let connectionFound = false;
+  let connectionAttempts = 0;
+  const maxConnectionAttempts = 50;
+  
+  for (let i = 0; i < shuffledStudents.length - 1 && connectionAttempts < maxConnectionAttempts; i++) {
+    for (let j = i + 1; j < shuffledStudents.length && connectionAttempts < maxConnectionAttempts; j++) {
+      connectionAttempts++;
+      
       const student1 = shuffledStudents[i];
       const student2 = shuffledStudents[j];
       
-      const connection = findEducationConnection(student1, student2);
-      if (connection) {
-        // Found a connection, generate a question
-        return createEducationTriviaQuestion(student1, student2, connection, shuffledStudents);
+      console.log(`Trying connection between ${student1.fullName} and ${student2.fullName} (attempt ${connectionAttempts})`);
+      
+      try {
+        const connection = findEducationConnection(student1, student2);
+        if (connection) {
+          // Found a connection, generate a question
+          console.log(`Found ${connection.type} connection: ${connection.description}`);
+          connectionFound = true;
+          return createEducationTriviaQuestion(student1, student2, connection, shuffledStudents);
+        } else {
+          console.log(`No education connection found between these students`);
+        }
+      } catch (error) {
+        console.error(`Error finding connection:`, error);
       }
     }
   }
   
+  console.log(`No education connections found after ${connectionAttempts} attempts`);
   return null;
 }
 
@@ -441,6 +469,15 @@ function generateEducationTriviaRound(students, questionCount = 5) {
   if (!students || students.length < 8) {
     throw new Error('Need at least 8 students to generate an education trivia round');
   }
+  
+  console.log(`Generating education trivia round with ${students.length} students and ${questionCount} questions`);
+  
+  // Count students with education data
+  const studentsWithEducation = students.filter(s => 
+    s.educationParsed && Array.isArray(s.educationParsed) && s.educationParsed.length > 0
+  );
+  
+  console.log(`Found ${studentsWithEducation.length} students with education data`);
   
   // Limit question count to a reasonable number
   questionCount = Math.min(questionCount, 10);
@@ -464,13 +501,19 @@ function generateEducationTriviaRound(students, questionCount = 5) {
         
         if (!isDuplicate) {
           questions.push(question);
+          console.log(`Added question ${questions.length}/${questionCount} (attempt ${attempts})`);
+        } else {
+          console.log(`Skipping duplicate question (attempt ${attempts})`);
         }
+      } else {
+        console.log(`No question generated on attempt ${attempts}`);
       }
     } catch (error) {
       console.error('Error generating education trivia:', error);
     }
   }
   
+  console.log(`Generated ${questions.length} education trivia questions after ${attempts} attempts`);
   return questions;
 }
 
