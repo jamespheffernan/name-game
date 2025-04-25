@@ -3689,11 +3689,10 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Add a slight delay before auto-advancing to allow the user to see their selection
         setTimeout(() => {
-          // Auto-advance if button is enabled
-          if (!continueBtn.disabled) {
-            continueBtn.click();
-          }
-        }, 300); // 300ms delay - enough to see the selection but quick enough to feel responsive
+          // We will not auto-advance here, requiring the user to press Enter or click Continue
+        // This prevents accidental skipping of questions when using number keys
+        // The continue button is still enabled for manual advancement
+        }, 300); // 300ms delay to show the selection has been made
       }
     }
     
