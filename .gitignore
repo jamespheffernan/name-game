@@ -3,7 +3,6 @@ node_modules/
 npm-debug.log
 yarn-debug.log
 yarn-error.log
-package-lock.json
 
 # Environment variables
 .env
@@ -33,8 +32,15 @@ Thumbs.db
 logs/
 *.log
 
-# Database files (optional - you might want to commit these)
-# data/students.json  # Uncomment if you don't want to track student data in git
+# Private roster data and uploads
+data/*
+!data/.gitkeep
+src/public/uploads/*
+!src/public/uploads/.gitkeep
+!src/public/uploads/student-images/
+src/public/uploads/student-images/*
+!src/public/uploads/student-images/.gitkeep
+*.pdf
 
 # Temporary files
 tmp/

@@ -37,7 +37,9 @@ A web application to help instructors learn and remember student names. This too
    ```
 
 4. Access the application:
-   Open your browser and navigate to `http://localhost:8080`
+   Open your browser and navigate to `http://localhost:3000`
+
+The application starts with an empty local database. Import or add your own roster after launch; real names, email addresses, profile data, photos, PDFs, and performance records are intentionally excluded from this repository.
 
 ## Usage
 
@@ -63,4 +65,8 @@ Create and manage tags to organize students into groups or categories, making it
 
 ## License
 
-MIT
+MIT. See [LICENSE](LICENSE).
+
+## Privacy
+
+Student rosters and photos are personal data. Keep `data/`, uploaded PDFs, exported rosters, and `src/public/uploads/` private. The included ignore rules prevent those runtime files from being committed accidentally.
